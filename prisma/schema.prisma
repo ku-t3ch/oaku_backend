@@ -159,12 +159,14 @@ model Log {
 }
 
 model UserOrganization {
-  id             String   @id @default(uuid())
-  userId         String
-  organizationId String
-  role           Role
-  position       Position
-  joinedAt       DateTime @default(now())
+  id                 String   @id @default(uuid())
+  userId             String
+  organizationId     String
+  userIdCode         String
+  organizationIdCode String
+  role               Role
+  position           Position
+  joinedAt           DateTime @default(now())
 
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)

@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   console.log("Starting seed...");
-  
+
   // Clear existing data first (ลำดับสำคัญ!)
   await prisma.activityHour.deleteMany();
   await prisma.log.deleteMany();
@@ -14,7 +14,7 @@ async function main() {
   await prisma.organization.deleteMany();
   await prisma.organizationType.deleteMany();
   await prisma.campus.deleteMany();
-  
+
   console.log("Cleared existing data");
 
   // --- Create Campuses ---
@@ -440,13 +440,11 @@ async function main() {
   const users = await Promise.all([
     prisma.user.create({
       data: {
-        userId: "KU001",
-        name: "ผศ.ดร.สมชาย ใจดี",
-        email: "somchai.j@ku.ac.th",
-        phoneNumber: "081-234-5678",
+        userId: "b6610450366",
+        name: "รวิพล พลศรุตวานิช",
+        email: "rawipon.po@ku.th",
+        phoneNumber: "0933244055",
         campusId: bangkokCampus.id,
-        // ลบ position และ role ออก
-        // ลบ organizations connect ออก
       },
     }),
     prisma.user.create({
@@ -505,54 +503,63 @@ async function main() {
       data: {
         userId: users[0].id,
         organizationId: organizations[0].id, // Faculty of Agriculture
+        userIdCode: users[0].userId, // ใช้ userId แทน
+        organizationIdCode: organizations[0].publicOrganizationId, // ใช้ publicOrganizationId
         role: "ADMIN",
-        position: "NON_POSITION", 
+        position: "NON_POSITION",
       },
     }),
     prisma.userOrganization.create({
       data: {
         userId: users[0].id,
-        organizationId: organizations[9].id, // Graduate School (ถ้ามี)
+        organizationId: organizations[9].id,
+        userIdCode: users[0].userId,
+        organizationIdCode: organizations[9].publicOrganizationId,
         role: "USER",
         position: "MEMBER",
       },
     }),
-    
+
     // KU002: MEMBER ของ Faculty of Engineering
     prisma.userOrganization.create({
       data: {
         userId: users[1].id,
-        organizationId: organizations[1].id, // Faculty of Engineering
+        organizationId: organizations[1].id,
+        userIdCode: users[1].userId,
+        organizationIdCode: organizations[1].publicOrganizationId,
         role: "USER",
         position: "MEMBER",
       },
     }),
-    
-    // KU003: CAMPUS_ADMIN ของ Faculty of Science
+
     prisma.userOrganization.create({
       data: {
         userId: users[2].id,
-        organizationId: organizations[2].id, // Faculty of Science (ถ้ามี)
+        organizationId: organizations[2].id,
+        userIdCode: users[2].userId,
+        organizationIdCode: organizations[2].publicOrganizationId,
         role: "CAMPUS_ADMIN",
-        position: "NON_POSITION", // ไม่มีตำแหน่งเฉพาะ
+        position: "NON_POSITION",
       },
     }),
-    
-    // KU004: HEAD ของ Faculty of Agriculture KPS
+
     prisma.userOrganization.create({
       data: {
         userId: users[3].id,
-        organizationId: organizations[0].id, // หรือ KPS Agriculture org
+        organizationId: organizations[0].id,
+        userIdCode: users[3].userId,
+        organizationIdCode: organizations[0].publicOrganizationId,
         role: "ADMIN",
-        position: "NON_POSITION", // ไม่มีตำแหน่งเฉพาะ
+        position: "NON_POSITION",
       },
     }),
-    
-    // KU005: USER ใน 2 organizations (test case ที่ต้องการ)
+
     prisma.userOrganization.create({
       data: {
         userId: users[4].id,
-        organizationId: organizations[0].id, // org1
+        organizationId: organizations[0].id,
+        userIdCode: users[4].userId,
+        organizationIdCode: organizations[0].publicOrganizationId,
         role: "USER",
         position: "MEMBER",
       },
@@ -560,19 +567,23 @@ async function main() {
     prisma.userOrganization.create({
       data: {
         userId: users[4].id,
-        organizationId: organizations[1].id, // org2
-        role: "USER", 
-        position: "HEAD", // test case: same user, different positions
+        organizationId: organizations[1].id,
+        userIdCode: users[4].userId,
+        organizationIdCode: organizations[1].publicOrganizationId,
+        role: "USER",
+        position: "HEAD",
       },
     }),
-    
+
     // KU006: CAMPUS_ADMIN
     prisma.userOrganization.create({
       data: {
         userId: users[5].id,
         organizationId: organizations[0].id,
+        userIdCode: users[5].userId,
+        organizationIdCode: organizations[0].publicOrganizationId,
         role: "CAMPUS_ADMIN",
-        position: "NON_POSITION", // ไม่มีตำแหน่งเฉพาะ
+        position: "NON_POSITION",
       },
     }),
   ]);

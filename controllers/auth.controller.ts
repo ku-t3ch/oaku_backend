@@ -13,51 +13,100 @@ export const googleCallback = async (req: Request, res: Response) => {
 
     if (!user) {
       return res.redirect(
-        `${process.env.FRONTEND_URL}/login?error=auth_failed`
+        `${process.env.FRONTEND_URL}/Login?error=auth_failed`
       );
     }
 
-    const userRole = getUserRole(user);
+
+    const fullUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      include: {
+        campus: true,
+        userOrganizations: {
+          include: {
+            organization: {
+              include: {
+                campus: true, 
+                organizationType: true, 
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!fullUser) {
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/Login?error=user_not_found`
+      );
+    }
+
+    const userRole = getUserRole(fullUser);
 
     // สร้าง JWT tokens
     const accessToken = generateAccessToken({
-      userId: user.id,
-      email: user.email,
+      userId: fullUser.id,
+      email: fullUser.email,
       role: userRole,
     });
 
     const refreshToken = generateRefreshToken({
-      userId: user.id,
-      email: user.email,
+      userId: fullUser.id,
+      email: fullUser.email,
       role: userRole,
     });
+
+
+    const userData = {
+      id: fullUser.id,
+      name: fullUser.name,
+      email: fullUser.email,
+      image: fullUser.image, 
+      role: userRole,
+      campus: fullUser.campus, 
+      userOrganizations: fullUser.userOrganizations?.map((uo) => ({
+        id: uo.id,
+        userId: uo.userId,
+        organizationId: uo.organizationId,
+        userIdCode: uo.userIdCode,
+        organizationIdCode: uo.organizationIdCode,
+        role: uo.role,
+        position: uo.position,
+        joinedAt: uo.joinedAt,
+        organization: {
+          id: uo.organization.id,
+          publicOrganizationId: uo.organization.publicOrganizationId,
+          nameEn: uo.organization.nameEn,
+          nameTh: uo.organization.nameTh,
+          image: uo.organization.image,
+          details: uo.organization.details,
+          email: uo.organization.email,
+          phoneNumber: uo.organization.phoneNumber,
+          campus: uo.organization.campus, 
+          organizationType: uo.organization.organizationType, 
+        },
+      })) || [],
+    };
+
+    console.log("🔍 Sending user data:", JSON.stringify(userData, null, 2));
 
     // Log การเข้าสู่ระบบ
     await prisma.log.create({
       data: {
-        action: "LOGIN",
-        message: `User ${user.name} logged in via Google OAuth`,
-        userId: user.id,
+        action: "USER_LOGIN",
+        message: `User ${fullUser.email} logged in successfully`,
+        userId: fullUser.id,
       },
     });
 
-    // ส่ง tokens กลับไปยัง frontend
+    // Redirect กลับไปที่ frontend
+    const userDataEncoded = encodeURIComponent(JSON.stringify(userData));
     res.redirect(
-      `${
-        process.env.FRONTEND_URL
-      }/auth/callback?token=${accessToken}&refresh=${refreshToken}&user=${encodeURIComponent(
-        JSON.stringify({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: userRole,
-          campus: user.campus,
-        })
-      )}`
+      `${process.env.FRONTEND_URL}/auth/callback?token=${accessToken}&refresh=${refreshToken}&user=${userDataEncoded}`
     );
   } catch (error) {
     console.error("Google callback error:", error);
-    res.redirect(`${process.env.FRONTEND_URL}/login?error=server_error`);
+    res.redirect(`${process.env.FRONTEND_URL}/Login?error=server_error`);
   }
 };
 
@@ -151,6 +200,7 @@ export const getProfile = async (req: Request, res: Response) => {
         userId: user.userId,
         name: user.name,
         email: user.email,
+        image: user.image,
         role: userRole,
         campus: user.campus,
         organizations: user.userOrganizations?.map((uo: any) => ({

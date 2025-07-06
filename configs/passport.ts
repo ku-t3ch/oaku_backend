@@ -12,8 +12,6 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // ตรวจสอบว่าผู้ใช้มีอยู่แล้วหรือไม่
-
         let user = await prisma.user.findUnique({
           where: { email: profile.emails?.[0]?.value },
           include: {
@@ -22,6 +20,7 @@ passport.use(
               include: {
                 organization: {
                   include: {
+                    campus: true, 
                     organizationType: true,
                   },
                 },
@@ -43,6 +42,7 @@ passport.use(
                 include: {
                   organization: {
                     include: {
+                      campus: true,
                       organizationType: true,
                     },
                   },
@@ -71,6 +71,7 @@ passport.use(
                 include: {
                   organization: {
                     include: {
+                      campus: true,
                       organizationType: true,
                     },
                   },
@@ -80,10 +81,10 @@ passport.use(
           });
         }
 
-        return done(null);
+        return done(null, user as any);
       } catch (error) {
         console.error("Google OAuth error:", error);
-        return done(error);
+        return done(error, null as any);
       }
     }
   )
@@ -106,6 +107,7 @@ passport.use(
               include: {
                 organization: {
                   include: {
+                    campus: true,
                     organizationType: true,
                   },
                 },
@@ -141,6 +143,7 @@ passport.deserializeUser(async (id: string, done) => {
           include: {
             organization: {
               include: {
+                campus: true,
                 organizationType: true,
               },
             },
@@ -148,7 +151,7 @@ passport.deserializeUser(async (id: string, done) => {
         },
       },
     });
-    done(null);
+    done(null, user as any); 
   } catch (error) {
     done(error, null);
   }

@@ -24,16 +24,12 @@ router.get("/", (req: Request, res: Response) => {
         "GET /auth/ - This API info",
         "GET /auth/google - Google OAuth login",
         "GET /auth/google/callback - OAuth callback",
-        "POST /auth/refresh - Refresh access token",
-        "POST /auth/debug-token - Debug token info (any token)",
       ],
       protected: [
         "GET /auth/test - Test protected route (any authenticated user)",
         "GET /auth/profile - Get user profile (any authenticated user)",
         "POST /auth/logout - Logout user (any authenticated user)",
-        "GET /auth/admin-test - Admin route (ADMIN+ roles only)",
-        "GET /auth/campus-admin-test - Campus Admin route (CAMPUS_ADMIN+ only)",
-        "GET /auth/super-admin-test - Super Admin route (SUPER_ADMIN only)",
+
       ],
     },
     howToTest: {

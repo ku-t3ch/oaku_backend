@@ -24,12 +24,6 @@ const testUsers = [
     campusId: "campus-ku-bangkhen",
   },
   {
-    userId: "admin001",
-    email: "admin@ku.ac.th",
-    role: "ADMIN",
-    campusId: "campus-ku-bangkhen",
-  },
-  {
     userId: "campus_admin001",
     email: "campus.admin@ku.ac.th",
     role: "CAMPUS_ADMIN",
@@ -69,7 +63,6 @@ try {
   console.log("4. เพิ่ม Variables:");
   console.log("   - base_url: http://localhost:3001");
   console.log("   - access_token_user: (copy USER token)");
-  console.log("   - access_token_admin: (copy ADMIN token)");
   console.log("   - access_token_campus_admin: (copy CAMPUS_ADMIN token)");
   console.log("   - access_token_super_admin: (copy SUPER_ADMIN token)");
   console.log("5. Save และเลือก Environment นี้");

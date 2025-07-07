@@ -60,7 +60,6 @@ export interface UserOrganization {
 
 export enum Role {
   USER = 'USER',
-  ADMIN = 'ADMIN',
   CAMPUS_ADMIN = 'CAMPUS_ADMIN',
   SUPER_ADMIN = 'SUPER_ADMIN'
 }

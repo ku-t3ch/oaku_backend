@@ -9,7 +9,6 @@ datasource db {
 
 enum Role {
   USER
-  ADMIN
   CAMPUS_ADMIN
   SUPER_ADMIN
 }
@@ -163,7 +162,7 @@ model Log {
 model UserRole {
   id        String   @id @default(uuid())
   userId    String
-  role      Role     // ADMIN, CAMPUS_ADMIN, SUPER_ADMIN
+  role      Role     // CAMPUS_ADMIN, SUPER_ADMIN
   campusId  String?  // สำหรับ CAMPUS_ADMIN
   createdAt DateTime @default(now())
 

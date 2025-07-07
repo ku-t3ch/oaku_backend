@@ -268,7 +268,6 @@ export const optionalAuth = (
 
 // Pre-defined role middlewares - ✅ ใช้ authorizeRoles ที่แก้ไขแล้ว
 export const adminOnly = authorizeRoles([
-  Role.ADMIN,
   Role.CAMPUS_ADMIN,
   Role.SUPER_ADMIN,
 ]);
@@ -279,7 +278,6 @@ export const campusAdminOrHigher = authorizeRoles([
 ]);
 export const userOrHigher = authorizeRoles([
   Role.USER,
-  Role.ADMIN,
   Role.CAMPUS_ADMIN,
   Role.SUPER_ADMIN,
 ]);

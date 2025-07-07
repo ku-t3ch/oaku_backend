@@ -10,7 +10,7 @@ async function main() {
   await prisma.log.deleteMany();
   await prisma.project.deleteMany();
   await prisma.userOrganization.deleteMany();
-  await prisma.userRole.deleteMany(); // ✅ เพิ่มบรรทัดนี้
+  await prisma.userRole.deleteMany();
   await prisma.user.deleteMany();
   await prisma.organization.deleteMany();
   await prisma.organizationType.deleteMany();
@@ -18,7 +18,7 @@ async function main() {
 
   console.log("Cleared existing data");
 
-  // --- Create Campuses (เหมือนเดิม) ---
+  // --- Create Campuses ---
   const bangkokCampus = await prisma.campus.create({
     data: { name: "วิทยาเขตบางเขน" },
   });
@@ -37,7 +37,7 @@ async function main() {
 
   console.log("Created campuses");
 
-  // --- Create Organization Types (เหมือนเดิม) ---
+  // --- Create Organization Types ---
   const facultyTypeBKK = await prisma.organizationType.create({
     data: { name: "คณะ", campusId: bangkokCampus.id },
   });
@@ -229,9 +229,9 @@ async function main() {
 
   console.log("Created organizations");
 
-  // --- Create Comprehensive Test Users ---
+  // --- Create Users ---
   const users = await Promise.all([
-    // ===== TEST CASE 1: SUPER_ADMIN เท่านั้น =====
+    // users[0] = SUPER001
     prisma.user.create({
       data: {
         userId: "SUPER001",
@@ -242,18 +242,7 @@ async function main() {
       },
     }),
 
-    // ===== TEST CASE 2: ADMIN เท่านั้น =====
-    prisma.user.create({
-      data: {
-        userId: "ADMIN001",
-        name: "อ.สมหญิง จัดการ",
-        email: "somying.admin@ku.ac.th",
-        phoneNumber: "081-222-2222",
-        campusId: bangkokCampus.id,
-      },
-    }),
-
-    // ===== TEST CASE 3: CAMPUS_ADMIN เท่านั้น (Bangkok) =====
+    // users[1] = CAMP_BKK001
     prisma.user.create({
       data: {
         userId: "CAMP_BKK001",
@@ -264,7 +253,7 @@ async function main() {
       },
     }),
 
-    // ===== TEST CASE 4: CAMPUS_ADMIN เท่านั้น (Kamphaeng Saen) =====
+    // users[2] = CAMP_KPS001
     prisma.user.create({
       data: {
         userId: "CAMP_KPS001",
@@ -275,7 +264,7 @@ async function main() {
       },
     }),
 
-    // ===== TEST CASE 5: CAMPUS_ADMIN เท่านั้น (Sakon Nakhon) =====
+    // users[3] = CAMP_SNK001
     prisma.user.create({
       data: {
         userId: "CAMP_SNK001",
@@ -286,7 +275,7 @@ async function main() {
       },
     }),
 
-    // ===== TEST CASE 6: USER เท่านั้น (1 องค์กร, HEAD) =====
+    // users[4] = USER001
     prisma.user.create({
       data: {
         userId: "USER001",
@@ -297,7 +286,7 @@ async function main() {
       },
     }),
 
-    // ===== TEST CASE 7: USER เท่านั้น (1 องค์กร, MEMBER) =====
+    // users[5] = USER002
     prisma.user.create({
       data: {
         userId: "USER002",
@@ -308,7 +297,7 @@ async function main() {
       },
     }),
 
-    // ===== TEST CASE 8: USER เท่านั้น (หลายองค์กร) =====
+    // users[6] = USER003
     prisma.user.create({
       data: {
         userId: "USER003",
@@ -319,7 +308,7 @@ async function main() {
       },
     }),
 
-    // ===== TEST CASE 9: ไม่มี role ใดๆ (edge case) =====
+    // users[7] = NOROLE001
     prisma.user.create({
       data: {
         userId: "NOROLE001",
@@ -330,7 +319,7 @@ async function main() {
       },
     }),
 
-    // ===== TEST CASE 10: Multiple ADMIN roles =====
+    // users[8] = b6610450366
     prisma.user.create({
       data: {
         userId: "b6610450366",
@@ -341,18 +330,7 @@ async function main() {
       },
     }),
 
-    // ===== TEST CASE 11: ADMIN + USER roles =====
-    prisma.user.create({
-      data: {
-        userId: "HYBRID001",
-        name: "ผศ.มิกซ์ ทั้งสอง",
-        email: "mix.both@ku.ac.th",
-        phoneNumber: "082-111-1111",
-        campusId: bangkokCampus.id,
-      },
-    }),
-
-    // ===== TEST CASE 12: CAMPUS_ADMIN + USER roles =====
+    // users[9] = HYBRID002
     prisma.user.create({
       data: {
         userId: "HYBRID002",
@@ -363,7 +341,7 @@ async function main() {
       },
     }),
 
-    // ===== TEST CASE 13: SUPER_ADMIN + CAMPUS_ADMIN + USER =====
+    // users[10] = ULTIMATE001
     prisma.user.create({
       data: {
         userId: "ULTIMATE001",
@@ -374,7 +352,7 @@ async function main() {
       },
     }),
 
-    // ===== TEST CASE 14: User ข้าม campus =====
+    // users[11] = CROSS001
     prisma.user.create({
       data: {
         userId: "CROSS001",
@@ -388,9 +366,9 @@ async function main() {
 
   console.log("Created comprehensive test users");
 
-  // --- Create User Roles (Admin roles) ---
+  // --- Create User Roles ---
   const userRoles = await Promise.all([
-    // ===== SUPER_ADMIN roles =====
+    // SUPER_ADMIN roles
     prisma.userRole.create({
       data: {
         userId: users[0].id, // SUPER001
@@ -398,109 +376,81 @@ async function main() {
       },
     }),
 
-    // ===== ADMIN roles =====
+    // CAMPUS_ADMIN roles
     prisma.userRole.create({
       data: {
-        userId: users[1].id, // ADMIN001
-        role: "ADMIN",
-      },
-    }),
-
-    // ===== CAMPUS_ADMIN roles =====
-    prisma.userRole.create({
-      data: {
-        userId: users[2].id, // CAMP_BKK001
+        userId: users[1].id, // CAMP_BKK001
         role: "CAMPUS_ADMIN",
         campusId: bangkokCampus.id,
       },
     }),
     prisma.userRole.create({
       data: {
-        userId: users[3].id, // CAMP_KPS001
+        userId: users[2].id, // CAMP_KPS001
         role: "CAMPUS_ADMIN",
         campusId: kamphaengSaenCampus.id,
       },
     }),
     prisma.userRole.create({
       data: {
-        userId: users[4].id, // CAMP_SNK001
+        userId: users[3].id, // CAMP_SNK001
         role: "CAMPUS_ADMIN",
         campusId: sakonNakhonCampus.id,
       },
     }),
 
-    // ===== Multiple ADMIN roles (TEST CASE 10: b6610450366) =====
+    // Multiple ADMIN roles (b6610450366)
     prisma.userRole.create({
       data: {
-        userId: users[9].id, // b6610450366
+        userId: users[8].id, // b6610450366
         role: "SUPER_ADMIN",
       },
     }),
     prisma.userRole.create({
       data: {
-        userId: users[9].id, // b6610450366
-        role: "ADMIN",
-      },
-    }),
-    prisma.userRole.create({
-      data: {
-        userId: users[9].id, // b6610450366
+        userId: users[8].id, // b6610450366
         role: "CAMPUS_ADMIN",
         campusId: bangkokCampus.id,
       },
     }),
 
-    // ===== HYBRID roles (TEST CASE 11: ADMIN + USER) =====
+    // HYBRID roles (HYBRID002)
     prisma.userRole.create({
       data: {
-        userId: users[10].id, // HYBRID001
-        role: "ADMIN",
-      },
-    }),
-
-    // ===== HYBRID roles (TEST CASE 12: CAMPUS_ADMIN + USER) =====
-    prisma.userRole.create({
-      data: {
-        userId: users[11].id, // HYBRID002
+        userId: users[9].id, // HYBRID002
         role: "CAMPUS_ADMIN",
         campusId: kamphaengSaenCampus.id,
       },
     }),
 
-    // ===== ULTIMATE roles (TEST CASE 13: ALL roles) =====
+    // ULTIMATE roles (ULTIMATE001)
     prisma.userRole.create({
       data: {
-        userId: users[12].id, // ULTIMATE001
+        userId: users[10].id, // ULTIMATE001
         role: "SUPER_ADMIN",
       },
     }),
     prisma.userRole.create({
       data: {
-        userId: users[12].id, // ULTIMATE001
+        userId: users[10].id, // ULTIMATE001
+        role: "CAMPUS_ADMIN",
+        campusId: bangkokCampus.id,
+      },
+    }),
+
+    // Cross-campus ADMIN (CROSS001)
+    prisma.userRole.create({
+      data: {
+        userId: users[11].id, // CROSS001
         role: "CAMPUS_ADMIN",
         campusId: bangkokCampus.id,
       },
     }),
     prisma.userRole.create({
       data: {
-        userId: users[12].id, // ULTIMATE001
-        role: "ADMIN",
-      },
-    }),
-
-    // ===== Cross-campus ADMIN (TEST CASE 14) =====
-    prisma.userRole.create({
-      data: {
-        userId: users[13].id, // CROSS001
+        userId: users[11].id, // CROSS001
         role: "CAMPUS_ADMIN",
-        campusId: bangkokCampus.id, // ดูแล BKK แต่อยู่ SR
-      },
-    }),
-    prisma.userRole.create({
-      data: {
-        userId: users[13].id, // CROSS001
-        role: "CAMPUS_ADMIN",
-        campusId: srirachaCampus.id, // ดูแล SR
+        campusId: srirachaCampus.id,
       },
     }),
   ]);
@@ -509,68 +459,68 @@ async function main() {
 
   // --- Create User Organization relationships ---
   const userOrganizations = await Promise.all([
-    // ===== USER roles (TEST CASE 6: USER001 - HEAD) =====
+    // USER001 - HEAD
     prisma.userOrganization.create({
       data: {
-        userId: users[5].id, // USER001
+        userId: users[4].id, // USER001
         organizationId: organizations[0].id, // Faculty of Agriculture
-        userIdCode: users[5].userId,
+        userIdCode: users[4].userId,
         organizationIdCode: organizations[0].publicOrganizationId,
         role: "USER",
         position: "HEAD",
       },
     }),
 
-    // ===== USER roles (TEST CASE 7: USER002 - MEMBER) =====
+    // USER002 - MEMBER
     prisma.userOrganization.create({
       data: {
-        userId: users[6].id, // USER002
+        userId: users[5].id, // USER002
+        organizationId: organizations[1].id, // Faculty of Engineering
+        userIdCode: users[5].userId,
+        organizationIdCode: organizations[1].publicOrganizationId,
+        role: "USER",
+        position: "MEMBER",
+      },
+    }),
+
+    // USER003 - Multiple organizations
+    prisma.userOrganization.create({
+      data: {
+        userId: users[6].id, // USER003
+        organizationId: organizations[0].id, // Faculty of Agriculture
+        userIdCode: users[6].userId,
+        organizationIdCode: organizations[0].publicOrganizationId,
+        role: "USER",
+        position: "MEMBER",
+      },
+    }),
+    prisma.userOrganization.create({
+      data: {
+        userId: users[6].id, // USER003
         organizationId: organizations[1].id, // Faculty of Engineering
         userIdCode: users[6].userId,
         organizationIdCode: organizations[1].publicOrganizationId,
         role: "USER",
-        position: "MEMBER",
-      },
-    }),
-
-    // ===== USER roles (TEST CASE 8: USER003 - Multiple organizations) =====
-    prisma.userOrganization.create({
-      data: {
-        userId: users[7].id, // USER003
-        organizationId: organizations[0].id, // Faculty of Agriculture
-        userIdCode: users[7].userId,
-        organizationIdCode: organizations[0].publicOrganizationId,
-        role: "USER",
-        position: "MEMBER",
-      },
-    }),
-    prisma.userOrganization.create({
-      data: {
-        userId: users[7].id, // USER003
-        organizationId: organizations[1].id, // Faculty of Engineering
-        userIdCode: users[7].userId,
-        organizationIdCode: organizations[1].publicOrganizationId,
-        role: "USER",
         position: "HEAD",
       },
     }),
     prisma.userOrganization.create({
       data: {
-        userId: users[7].id, // USER003
+        userId: users[6].id, // USER003
         organizationId: organizations[2].id, // Faculty of Science
-        userIdCode: users[7].userId,
+        userIdCode: users[6].userId,
         organizationIdCode: organizations[2].publicOrganizationId,
         role: "USER",
         position: "MEMBER",
       },
     }),
 
-    // ===== HYBRID roles (TEST CASE 10: b6610450366 - Multiple ADMIN + USER) =====
+    // b6610450366 - Multiple ADMIN + USER
     prisma.userOrganization.create({
       data: {
-        userId: users[9].id, // b6610450366
+        userId: users[8].id, // b6610450366
         organizationId: organizations[3].id, // Graduate School
-        userIdCode: users[9].userId,
+        userIdCode: users[8].userId,
         organizationIdCode: organizations[3].publicOrganizationId,
         role: "USER",
         position: "MEMBER",
@@ -578,33 +528,33 @@ async function main() {
     }),
     prisma.userOrganization.create({
       data: {
-        userId: users[9].id, // b6610450366
+        userId: users[8].id, // b6610450366
         organizationId: organizations[4].id, // Office of the President
-        userIdCode: users[9].userId,
+        userIdCode: users[8].userId,
         organizationIdCode: organizations[4].publicOrganizationId,
         role: "USER",
         position: "HEAD",
       },
     }),
 
-    // ===== HYBRID roles (TEST CASE 11: HYBRID001 - ADMIN + USER) =====
+    // CAMP_BKK001 - ADMIN + USER
     prisma.userOrganization.create({
       data: {
-        userId: users[10].id, // HYBRID001
+        userId: users[1].id, // CAMP_BKK001
         organizationId: organizations[0].id, // Faculty of Agriculture
-        userIdCode: users[10].userId,
+        userIdCode: users[1].userId,
         organizationIdCode: organizations[0].publicOrganizationId,
         role: "USER",
         position: "HEAD",
       },
     }),
 
-    // ===== HYBRID roles (TEST CASE 12: HYBRID002 - CAMPUS_ADMIN + USER) =====
+    // HYBRID002 - CAMPUS_ADMIN + USER
     prisma.userOrganization.create({
       data: {
-        userId: users[11].id, // HYBRID002
+        userId: users[9].id, // HYBRID002
         organizationId: organizations[5].id, // Faculty of Agriculture at Kamphaeng Saen
-        userIdCode: users[11].userId,
+        userIdCode: users[9].userId,
         organizationIdCode: organizations[5].publicOrganizationId,
         role: "USER",
         position: "HEAD",
@@ -612,21 +562,21 @@ async function main() {
     }),
     prisma.userOrganization.create({
       data: {
-        userId: users[11].id, // HYBRID002
+        userId: users[9].id, // HYBRID002
         organizationId: organizations[6].id, // Kamphaeng Saen Campus Office
-        userIdCode: users[11].userId,
+        userIdCode: users[9].userId,
         organizationIdCode: organizations[6].publicOrganizationId,
         role: "USER",
         position: "MEMBER",
       },
     }),
 
-    // ===== ULTIMATE roles (TEST CASE 13: ULTIMATE001 - ALL roles + USER) =====
+    // ULTIMATE001 - ALL roles + USER
     prisma.userOrganization.create({
       data: {
-        userId: users[12].id, // ULTIMATE001
+        userId: users[10].id, // ULTIMATE001
         organizationId: organizations[0].id, // Faculty of Agriculture
-        userIdCode: users[12].userId,
+        userIdCode: users[10].userId,
         organizationIdCode: organizations[0].publicOrganizationId,
         role: "USER",
         position: "HEAD",
@@ -634,9 +584,9 @@ async function main() {
     }),
     prisma.userOrganization.create({
       data: {
-        userId: users[12].id, // ULTIMATE001
+        userId: users[10].id, // ULTIMATE001
         organizationId: organizations[1].id, // Faculty of Engineering
-        userIdCode: users[12].userId,
+        userIdCode: users[10].userId,
         organizationIdCode: organizations[1].publicOrganizationId,
         role: "USER",
         position: "HEAD",
@@ -644,21 +594,21 @@ async function main() {
     }),
     prisma.userOrganization.create({
       data: {
-        userId: users[12].id, // ULTIMATE001
+        userId: users[10].id, // ULTIMATE001
         organizationId: organizations[2].id, // Faculty of Science
-        userIdCode: users[12].userId,
+        userIdCode: users[10].userId,
         organizationIdCode: organizations[2].publicOrganizationId,
         role: "USER",
         position: "MEMBER",
       },
     }),
 
-    // ===== Cross-campus (TEST CASE 14: CROSS001) =====
+    // CROSS001 - Cross-campus
     prisma.userOrganization.create({
       data: {
-        userId: users[13].id, // CROSS001
+        userId: users[11].id, // CROSS001
         organizationId: organizations[9].id, // Faculty of Science at Sriracha
-        userIdCode: users[13].userId,
+        userIdCode: users[11].userId,
         organizationIdCode: organizations[9].publicOrganizationId,
         role: "USER",
         position: "HEAD",
@@ -666,9 +616,9 @@ async function main() {
     }),
     prisma.userOrganization.create({
       data: {
-        userId: users[13].id, // CROSS001
+        userId: users[11].id, // CROSS001
         organizationId: organizations[0].id, // Faculty of Agriculture (BKK)
-        userIdCode: users[13].userId,
+        userIdCode: users[11].userId,
         organizationIdCode: organizations[0].publicOrganizationId,
         role: "USER",
         position: "MEMBER",
@@ -678,7 +628,7 @@ async function main() {
 
   console.log("Created comprehensive user-organization relationships");
 
-  // --- Create Sample Projects (เลือกแค่บางอัน) ---
+  // --- Create Sample Projects ---
   const projects = await Promise.all([
     prisma.project.create({
       data: {
@@ -746,7 +696,7 @@ async function main() {
         isCompleted: true,
         fileNamePrinciple: "activity-report-001.pdf",
         projectId: projects[0].id,
-        userId: users[5].id, // USER001
+        userId: users[4].id, // USER001
       },
     }),
   ]);
@@ -766,7 +716,7 @@ async function main() {
       data: {
         action: "USER_LOGIN", 
         message: "ผู้ใช้งาน b6610450366 เข้าสู่ระบบ",
-        userId: users[9].id,
+        userId: users[8].id,
       },
     }),
   ]);
@@ -798,33 +748,29 @@ async function main() {
   - ${totalActivityHours} activity hours
   - ${totalLogs} logs
 
-=== TEST CASES COVERAGE ===
-✅ 1.  SUPER_ADMIN เท่านั้น (SUPER001)
-✅ 2.  ADMIN เท่านั้น (ADMIN001)  
-✅ 3.  CAMPUS_ADMIN เท่านั้น - Bangkok (CAMP_BKK001)
-✅ 4.  CAMPUS_ADMIN เท่านั้น - Kamphaeng Saen (CAMP_KPS001)
-✅ 5.  CAMPUS_ADMIN เท่านั้น - Sakon Nakhon (CAMP_SNK001)
-✅ 6.  USER เท่านั้น - 1 องค์กร HEAD (USER001)
-✅ 7.  USER เท่านั้น - 1 องค์กร MEMBER (USER002)
-✅ 8.  USER เท่านั้น - หลายองค์กร (USER003)
-✅ 9.  ไม่มี role ใดๆ (NOROLE001)
-✅ 10. Multiple ADMIN roles (b6610450366)
-✅ 11. ADMIN + USER roles (HYBRID001)
-✅ 12. CAMPUS_ADMIN + USER roles (HYBRID002)
-✅ 13. ALL roles combination (ULTIMATE001)
-✅ 14. Cross-campus roles (CROSS001)
+=== USER INDEX MAPPING ===
+users[0]  = SUPER001     → SUPER_ADMIN
+users[1]  = CAMP_BKK001  → CAMPUS_ADMIN (Bangkok)
+users[2]  = CAMP_KPS001  → CAMPUS_ADMIN (Kamphaeng Saen)
+users[3]  = CAMP_SNK001  → CAMPUS_ADMIN (Sakon Nakhon)
+users[4]  = USER001      → USER (1 org, HEAD)
+users[5]  = USER002      → USER (1 org, MEMBER)
+users[6]  = USER003      → USER (3 orgs)
+users[7]  = NOROLE001    → No roles
+users[8]  = b6610450366  → SUPER_ADMIN + CAMPUS_ADMIN + USER
+users[9]  = HYBRID002    → CAMPUS_ADMIN + USER
+users[10] = ULTIMATE001  → ALL roles + USER
+users[11] = CROSS001     → Cross-campus ADMIN + USER
 
 === LOGIN TEST SCENARIOS ===
 🔐 Use these emails to test different role combinations:
    • somsak.super@ku.ac.th     → SUPER_ADMIN only
-   • somying.admin@ku.ac.th    → ADMIN only
    • wichai.bkk@ku.ac.th       → CAMPUS_ADMIN (BKK) only
    • somchai.head@ku.ac.th     → USER only (1 org, HEAD)
    • sommai.member@ku.ac.th    → USER only (1 org, MEMBER)
    • somjai.multi@ku.ac.th     → USER only (3 orgs)
    • norole.waiting@ku.ac.th   → No roles (edge case)
    • rawipon.po@ku.th          → ALL ADMIN roles + USER
-   • mix.both@ku.ac.th         → ADMIN + USER
    • mix.campus@ku.ac.th       → CAMPUS_ADMIN + USER
    • ultimate.all@ku.ac.th     → ALL roles + USER
    • cross.campus@ku.ac.th     → Cross-campus ADMIN + USER

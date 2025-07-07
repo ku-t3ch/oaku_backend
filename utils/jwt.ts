@@ -116,7 +116,6 @@ export const getUserRoles = (user: any): Role[] => {
     
     if (adminRoles.includes(Role.SUPER_ADMIN)) roles.push(Role.SUPER_ADMIN);
     if (adminRoles.includes(Role.CAMPUS_ADMIN)) roles.push(Role.CAMPUS_ADMIN);
-    if (adminRoles.includes(Role.ADMIN)) roles.push(Role.ADMIN);
   }
 
   // ✅ ถ้าไม่มี role ใดๆ ให้เป็น USER
@@ -125,7 +124,7 @@ export const getUserRoles = (user: any): Role[] => {
 
 // ✅ เพิ่ม function สำหรับหา highest role
 export const getHighestRole = (roles: Role[]): Role => {
-  const roleHierarchy = [Role.USER, Role.ADMIN, Role.CAMPUS_ADMIN, Role.SUPER_ADMIN];
+  const roleHierarchy = [Role.USER, Role.CAMPUS_ADMIN, Role.SUPER_ADMIN];
   
   let highestRole = Role.USER;
   for (const role of roles) {

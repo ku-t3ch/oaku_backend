@@ -119,11 +119,24 @@ CREATE TABLE "Log" (
 );
 
 -- CreateTable
+CREATE TABLE "UserRole" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "role" "Role" NOT NULL,
+    "campusId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UserRole_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "UserOrganization" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
-    "role" "Role" NOT NULL,
+    "userIdCode" TEXT NOT NULL,
+    "organizationIdCode" TEXT NOT NULL,
+    "role" "Role" NOT NULL DEFAULT 'USER',
     "position" "Position" NOT NULL,
     "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -147,6 +160,9 @@ CREATE UNIQUE INDEX "Project_publicProjectId_key" ON "Project"("publicProjectId"
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Project_activityCode_key" ON "Project"("activityCode");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserRole_userId_role_campusId_key" ON "UserRole"("userId", "role", "campusId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "UserOrganization_userId_organizationId_key" ON "UserOrganization"("userId", "organizationId");
@@ -177,6 +193,12 @@ ALTER TABLE "ActivityHour" ADD CONSTRAINT "ActivityHour_userId_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "Log" ADD CONSTRAINT "Log_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserRole" ADD CONSTRAINT "UserRole_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserRole" ADD CONSTRAINT "UserRole_campusId_fkey" FOREIGN KEY ("campusId") REFERENCES "Campus"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "UserOrganization" ADD CONSTRAINT "UserOrganization_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

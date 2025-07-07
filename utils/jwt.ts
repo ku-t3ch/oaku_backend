@@ -4,7 +4,7 @@ import { Role } from "../types/user";
 export interface JWTPayload {
   userId: string;
   email: string;
-  role?: string;
+  roles?: string[]; // ✅ เปลี่ยนจาก role เดี่ยว เป็น roles หลายตัว
   campusId?: string;
   iat?: number;
   exp?: number;
@@ -96,18 +96,51 @@ export const verifyRefreshToken = (token: string): JWTPayload => {
   }
 };
 
-export const getUserRole = (user: any): Role => {
-  // ตรวจสอบ role สูงสุดจาก userOrganizations
-  if (user.userOrganizations && user.userOrganizations.length > 0) {
-    const roles = user.userOrganizations.map((uo: any) => uo.role);
+// ✅ แก้ไข getUserRoles ให้ส่งคืน array ของ roles
+export const getUserRoles = (user: any): Role[] => {
+  const roles: Role[] = [];
 
-    if (roles.includes(Role.SUPER_ADMIN)) return Role.SUPER_ADMIN;
-    if (roles.includes(Role.CAMPUS_ADMIN)) return Role.CAMPUS_ADMIN;
-    if (roles.includes(Role.ADMIN)) return Role.ADMIN;
+  // ✅ ตรวจสอบ userOrganizations สำหรับ USER roles
+  if (user.userOrganizations && user.userOrganizations.length > 0) {
+    const orgRoles = user.userOrganizations.map((uo: any) => uo.role);
+    
+    // เพิ่มเฉพาะ USER role จาก organizations
+    if (orgRoles.includes(Role.USER)) {
+      roles.push(Role.USER);
+    }
   }
 
-  // Fallback to default role
-  return Role.USER;
+  // ✅ ตรวจสอบ userRoles สำหรับ ADMIN roles (จะเพิ่มใน schema ใหม่)
+  if (user.userRoles && user.userRoles.length > 0) {
+    const adminRoles = user.userRoles.map((ur: any) => ur.role);
+    
+    if (adminRoles.includes(Role.SUPER_ADMIN)) roles.push(Role.SUPER_ADMIN);
+    if (adminRoles.includes(Role.CAMPUS_ADMIN)) roles.push(Role.CAMPUS_ADMIN);
+    if (adminRoles.includes(Role.ADMIN)) roles.push(Role.ADMIN);
+  }
+
+  // ✅ ถ้าไม่มี role ใดๆ ให้เป็น USER
+  return roles.length > 0 ? roles : [Role.USER];
+};
+
+// ✅ เพิ่ม function สำหรับหา highest role
+export const getHighestRole = (roles: Role[]): Role => {
+  const roleHierarchy = [Role.USER, Role.ADMIN, Role.CAMPUS_ADMIN, Role.SUPER_ADMIN];
+  
+  let highestRole = Role.USER;
+  for (const role of roles) {
+    if (roleHierarchy.indexOf(role) > roleHierarchy.indexOf(highestRole)) {
+      highestRole = role;
+    }
+  }
+  
+  return highestRole;
+};
+
+// ✅ Backward compatibility function
+export const getUserRole = (user: any): Role => {
+  const roles = getUserRoles(user);
+  return getHighestRole(roles);
 };
 
 // Utility functions

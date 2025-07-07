@@ -3,7 +3,8 @@ import {
   generateAccessToken,
   generateRefreshToken,
   verifyRefreshToken,
-  getUserRole,
+  getUserRoles,
+  getHighestRole,
 } from "../utils/jwt";
 import { prisma } from "../configs/db";
 
@@ -17,7 +18,7 @@ export const googleCallback = async (req: Request, res: Response) => {
       );
     }
 
-
+ 
     const fullUser = await prisma.user.findUnique({
       where: { id: user.id },
       include: {
@@ -32,6 +33,11 @@ export const googleCallback = async (req: Request, res: Response) => {
             },
           },
         },
+        userRoles: { // ✅ เพิ่ม userRoles
+          include: {
+            campus: true,
+          },
+        },
       },
     });
 
@@ -41,29 +47,36 @@ export const googleCallback = async (req: Request, res: Response) => {
       );
     }
 
-    const userRole = getUserRole(fullUser);
+    // ✅ ใช้ getUserRoles แทน getUserRole
+    const userRoles = getUserRoles(fullUser);
+    const highestRole = getHighestRole(userRoles);
 
-    // สร้าง JWT tokens
+    // ✅ สร้าง JWT tokens ด้วย roles array
     const accessToken = generateAccessToken({
       userId: fullUser.id,
       email: fullUser.email,
-      role: userRole,
+      roles: userRoles.map(role => role.toString()),
+      campusId: fullUser.campusId,
     });
 
     const refreshToken = generateRefreshToken({
       userId: fullUser.id,
       email: fullUser.email,
-      role: userRole,
+      roles: userRoles.map(role => role.toString()),
+      campusId: fullUser.campusId,
     });
 
-
+    // ✅ ส่ง userData ที่มี roles และ userRoles
     const userData = {
       id: fullUser.id,
+      userId: fullUser.userId,
       name: fullUser.name,
       email: fullUser.email,
       image: fullUser.image, 
-      role: userRole,
-      campus: fullUser.campus, 
+      roles: userRoles, // ✅ ส่ง array ของ roles
+      primaryRole: highestRole, // ✅ ส่ง primary role สำหรับ backward compatibility
+      campusId: fullUser.campusId,
+      campus: fullUser.campus,
       userOrganizations: fullUser.userOrganizations?.map((uo) => ({
         id: uo.id,
         userId: uo.userId,
@@ -86,6 +99,14 @@ export const googleCallback = async (req: Request, res: Response) => {
           organizationType: uo.organization.organizationType, 
         },
       })) || [],
+      userRoles: fullUser.userRoles?.map((ur) => ({ // ✅ เพิ่ม userRoles
+        id: ur.id,
+        userId: ur.userId,
+        role: ur.role,
+        campusId: ur.campusId,
+        createdAt: ur.createdAt,
+        campus: ur.campus,
+      })) || [],
     };
 
     console.log("🔍 Sending user data:", JSON.stringify(userData, null, 2));
@@ -94,7 +115,7 @@ export const googleCallback = async (req: Request, res: Response) => {
     await prisma.log.create({
       data: {
         action: "USER_LOGIN",
-        message: `User ${fullUser.email} logged in successfully`,
+        message: `User ${fullUser.email} logged in successfully with roles: ${userRoles.join(', ')}`,
         userId: fullUser.id,
       },
     });
@@ -120,7 +141,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 
     const payload = verifyRefreshToken(refreshToken);
 
-    // ตรวจสอบว่าผู้ใช้ยังมีอยู่และไม่ถูกระงับ
+    // ✅ Include userRoles ใน query
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
       include: {
@@ -129,9 +150,15 @@ export const refreshToken = async (req: Request, res: Response) => {
           include: {
             organization: {
               include: {
+                campus: true,
                 organizationType: true,
               },
             },
+          },
+        },
+        userRoles: { // ✅ เพิ่ม userRoles
+          include: {
+            campus: true,
           },
         },
       },
@@ -141,23 +168,30 @@ export const refreshToken = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Invalid refresh token" });
     }
 
-    const userRole = getUserRole(user);
+    // ✅ ใช้ getUserRoles
+    const userRoles = getUserRoles(user);
+    const highestRole = getHighestRole(userRoles);
 
-    // สร้าง access token ใหม่
+    // ✅ สร้าง access token ใหม่ด้วย roles array
     const newAccessToken = generateAccessToken({
       userId: user.id,
       email: user.email,
-      role: userRole,
+      roles: userRoles.map(role => role.toString()),
+      campusId: user.campusId,
     });
 
     res.json({
       accessToken: newAccessToken,
       user: {
         id: user.id,
+        userId: user.userId,
         name: user.name,
         email: user.email,
-        role: userRole,
-        campus: user.campus,
+        roles: userRoles,
+        primaryRole: highestRole,
+        campus: user.campus ,
+        userOrganizations: user.userOrganizations,
+        userRoles: user.userRoles,
       },
     });
   } catch (error) {
@@ -192,7 +226,9 @@ export const getProfile = async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
 
-    const userRole = getUserRole(user);
+    // ✅ ใช้ getUserRoles
+    const userRoles = getUserRoles(user);
+    const highestRole = getHighestRole(userRoles);
 
     res.json({
       user: {
@@ -201,13 +237,22 @@ export const getProfile = async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         image: user.image,
-        role: userRole,
+        roles: userRoles, // ✅ ส่ง array ของ roles
+        primaryRole: highestRole, // ✅ ส่ง primary role
         campus: user.campus,
-        organizations: user.userOrganizations?.map((uo: any) => ({
+        userOrganizations: user.userOrganizations?.map((uo: any) => ({
+          id: uo.id,
           organization: uo.organization,
           role: uo.role,
           position: uo.position,
           joinedAt: uo.joinedAt,
+        })),
+        userRoles: user.userRoles?.map((ur: any) => ({ // ✅ เพิ่ม userRoles
+          id: ur.id,
+          role: ur.role,
+          campusId: ur.campusId,
+          campus: ur.campus,
+          createdAt: ur.createdAt,
         })),
         createdAt: user.createdAt,
       },

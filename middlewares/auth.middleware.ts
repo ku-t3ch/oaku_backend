@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { verifyAccessToken, getUserRole } from "../utils/jwt";
+import { verifyAccessToken, getUserRoles, getHighestRole } from "../utils/jwt";
 import { Role, User } from "../types/user";
 
 // JWT Authentication Middleware
@@ -30,7 +30,7 @@ export const authenticateJWT = (
       return;
     }
 
-    const token = authHeader.substring(7); // Remove "Bearer " prefix
+    const token = authHeader.substring(7);
 
     if (!token) {
       res.status(401).json({
@@ -43,7 +43,7 @@ export const authenticateJWT = (
 
     const payload = verifyAccessToken(token);
 
-    // Create user object from token payload that matches User interface
+    // ✅ Create user object from token payload with roles
     const user: User = {
       id: payload.userId,
       userId: payload.userId,
@@ -53,12 +53,16 @@ export const authenticateJWT = (
       image: undefined,
       campusId: payload.campusId || "default-campus",
       campus: undefined,
-      userOrganizations: [], // Will be populated from database if needed
+      userOrganizations: [],
+      userRoles: [], // ✅ เพิ่ม userRoles
       isSuspended: false,
-      createdAt: new Date(), // Mock for JWT user
-      updatedAt: new Date(), // Mock for JWT user
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
-    (user as any).role = payload.role || "USER";
+
+    // ✅ เพิ่ม roles จาก JWT payload
+    (user as any).roles = payload.roles || ["USER"];
+    (user as any).primaryRole = getHighestRole(payload.roles?.map(r => r as Role) || [Role.USER]);
 
     req.user = user;
     next();
@@ -85,7 +89,7 @@ export const authenticateJWT = (
   }
 };
 
-// Role-based Authorization Middleware
+// ✅ แก้ไข Role-based Authorization Middleware
 export const authorizeRoles = (allowedRoles: Role[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
@@ -97,26 +101,25 @@ export const authorizeRoles = (allowedRoles: Role[]) => {
       return;
     }
 
-    // 🔧 แก้ไข: ใช้ role จาก JWT token payload
-    const userRole = (req.user as any).role || Role.USER;
+    // ✅ ใช้ roles array จาก JWT token
+    const userRoles = (req.user as any).roles || ["USER"];
 
-    console.log("🔍 User role from token:", userRole);
+    console.log("🔍 User roles from token:", userRoles);
     console.log("🔍 Allowed roles:", allowedRoles);
 
-    // Convert string to Role enum if needed
-    const userRoleEnum =
-      typeof userRole === "string"
-        ? (Role as any)[userRole] || Role.USER
-        : userRole;
+    // ✅ ตรวจสอบว่ามี role ใดตรงกับที่อนุญาตหรือไม่
+    const hasAllowedRole = userRoles.some((role: string) => 
+      allowedRoles.includes(role as Role)
+    );
 
-    if (!allowedRoles.includes(userRoleEnum)) {
+    if (!hasAllowedRole) {
       res.status(403).json({
         success: false,
         message: "Access denied: Insufficient permissions",
         code: "INSUFFICIENT_PERMISSIONS",
         data: {
           requiredRoles: allowedRoles,
-          userRole: userRoleEnum,
+          userRoles: userRoles,
         },
       });
       return;
@@ -126,7 +129,7 @@ export const authorizeRoles = (allowedRoles: Role[]) => {
   };
 };
 
-// Organization-based Authorization
+// ✅ ปรับปรุง Organization-based Authorization
 export const authorizeOrganization = (organizationId?: string) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
@@ -150,10 +153,11 @@ export const authorizeOrganization = (organizationId?: string) => {
       return;
     }
 
-    const userRole = getUserRole(req.user) as Role;
+    // ✅ ใช้ roles array
+    const userRoles = (req.user as any).roles || ["USER"];
 
     // SUPER_ADMIN และ CAMPUS_ADMIN ใช้ได้ทุก organization
-    if ([Role.SUPER_ADMIN, Role.CAMPUS_ADMIN].includes(userRole)) {
+    if (userRoles.includes("SUPER_ADMIN") || userRoles.includes("CAMPUS_ADMIN")) {
       next();
       return;
     }
@@ -176,54 +180,7 @@ export const authorizeOrganization = (organizationId?: string) => {
   };
 };
 
-// Optional Authentication
-export const optionalAuth = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      next(); // ไม่มี token ก็ผ่านไป
-      return;
-    }
-
-    const token = authHeader.substring(7);
-
-    if (!token) {
-      next();
-      return;
-    }
-
-    // Try to verify token
-    const payload = verifyAccessToken(token);
-
-    const user: User = {
-      id: payload.userId,
-      userId: payload.userId,
-      name: payload.email.split("@")[0],
-      email: payload.email,
-      phoneNumber: undefined,
-      image: undefined,
-      campusId: payload.campusId || "default-campus",
-      campus: undefined,
-      userOrganizations: [],
-      isSuspended: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    req.user = user;
-    next();
-  } catch (error) {
-    // สำหรับ optional auth ไม่ต้อง throw error
-    next();
-  }
-};
-
-// Campus-based Authorization
+// ✅ อัพเดต Campus-based Authorization
 export const authorizeCampus = (campusId?: string) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
@@ -236,16 +193,16 @@ export const authorizeCampus = (campusId?: string) => {
     }
 
     const targetCampusId = campusId || req.params.campusId || req.body.campusId;
-    const userRole = getUserRole(req.user) as Role;
+    const userRoles = (req.user as any).roles || ["USER"];
 
     // SUPER_ADMIN ใช้ได้ทุก campus
-    if (userRole === Role.SUPER_ADMIN) {
+    if (userRoles.includes("SUPER_ADMIN")) {
       next();
       return;
     }
 
     // CAMPUS_ADMIN ใช้ได้เฉพาะ campus ของตัวเอง
-    if (userRole === Role.CAMPUS_ADMIN) {
+    if (userRoles.includes("CAMPUS_ADMIN")) {
       if (req.user.campusId === targetCampusId) {
         next();
         return;
@@ -260,7 +217,56 @@ export const authorizeCampus = (campusId?: string) => {
   };
 };
 
-// Pre-defined role middlewares
+// Optional Authentication
+export const optionalAuth = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      next();
+      return;
+    }
+
+    const token = authHeader.substring(7);
+
+    if (!token) {
+      next();
+      return;
+    }
+
+    const payload = verifyAccessToken(token);
+
+    const user: User = {
+      id: payload.userId,
+      userId: payload.userId,
+      name: payload.email.split("@")[0],
+      email: payload.email,
+      phoneNumber: undefined,
+      image: undefined,
+      campusId: payload.campusId || "default-campus",
+      campus: undefined,
+      userOrganizations: [],
+      userRoles: [],
+      isSuspended: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    // ✅ เพิ่ม roles
+    (user as any).roles = payload.roles || ["USER"];
+
+    req.user = user;
+    next();
+  } catch (error) {
+    next();
+  }
+};
+
+// Pre-defined role middlewares - ✅ ใช้ authorizeRoles ที่แก้ไขแล้ว
 export const adminOnly = authorizeRoles([
   Role.ADMIN,
   Role.CAMPUS_ADMIN,
@@ -277,59 +283,3 @@ export const userOrHigher = authorizeRoles([
   Role.CAMPUS_ADMIN,
   Role.SUPER_ADMIN,
 ]);
-
-// Enhanced role checking with organization context
-export const requireOrganizationRole = (minRole: Role) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    if (!req.user) {
-      res.status(401).json({
-        success: false,
-        message: "Authentication required",
-        code: "AUTH_REQUIRED",
-      });
-      return;
-    }
-
-    const organizationId = req.params.organizationId || req.body.organizationId;
-
-    if (!organizationId) {
-      res.status(400).json({
-        success: false,
-        message: "Organization ID required",
-        code: "MISSING_ORG_ID",
-      });
-      return;
-    }
-
-    // Check if user has the required role in this organization
-    const userOrgRole = req.user.userOrganizations?.find(
-      (uo: any) => uo.organizationId === organizationId
-    )?.role;
-
-    const roleHierarchy = [
-      Role.USER,
-      Role.ADMIN,
-      Role.CAMPUS_ADMIN,
-      Role.SUPER_ADMIN,
-    ];
-
-    const userRole = getUserRole(req.user) as Role;
-    const userRoleLevel = roleHierarchy.indexOf(userOrgRole || userRole);
-    const minRoleLevel = roleHierarchy.indexOf(minRole);
-
-    if (userRoleLevel < minRoleLevel) {
-      res.status(403).json({
-        success: false,
-        message: "Access denied: Insufficient role in this organization",
-        code: "INSUFFICIENT_ORG_ROLE",
-        data: {
-          requiredRole: minRole,
-          userRole: userOrgRole || userRole,
-        },
-      });
-      return;
-    }
-
-    next();
-  };
-};

@@ -7,6 +7,7 @@ import userRoutes from "./routes/user.routes";
 import authRoutes from "./routes/auth.routes";
 import campusRoutes from "./routes/campus.routes";
 import organizationRoutes from "./routes/organization.routes";
+import organizationTypeRoutes from "./routes/organizationType.routes";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -37,6 +38,7 @@ app.use("/auth", authRoutes);
 app.use("/user",userRoutes);
 app.use("/campus",campusRoutes);
 app.use("/organization",organizationRoutes); 
+app.use("/organizationType", organizationTypeRoutes);
 
 // 404 handler
 app.use("*", (req, res) => {

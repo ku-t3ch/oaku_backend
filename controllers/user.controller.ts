@@ -10,8 +10,8 @@ export const getAllUsers = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const currentUser = req.user;
 
-    const isAdmin = currentUser.userRoles?.some((role: any) => 
-      role.role === "CAMPUS_ADMIN" || role.role === "SUPER_ADMIN"
+    const isAdmin = currentUser.userRoles?.some(
+      (role: any) => role.role === "CAMPUS_ADMIN" || role.role === "SUPER_ADMIN"
     );
 
     if (!isAdmin) {
@@ -145,14 +145,109 @@ export const addRoleAdminToUser = async (req: Request, res: Response) => {
   }
 };
 
-const getUserByRole = async (userId: string, role: Role) => {
-  if (role === "USER") {
-    return await prisma.user.findUnique({
-      where: { id: userId },
+export const getUserByRole = async (req: Request, res: Response) => {
+  try {
+    const { role } = req.body;
+
+
+    if (!role) {
+      return res.status(400).json({
+        error: "Role is required.",
+      });
+    }
+
+    const validRoles = ["USER", "CAMPUS_ADMIN", "SUPER_ADMIN"];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({
+        error: "Invalid role. Valid roles are: USER, CAMPUS_ADMIN, SUPER_ADMIN",
+      });
+    }
+
+    let users;
+
+    if (role === "USER") {
+
+      users = await prisma.user.findMany({
+        where: {
+          userOrganizations: {
+            some: {
+              role: "USER",
+            },
+          },
+        },
+        include: {
+          campus: true,
+          userOrganizations: {
+            where: { role: "USER" },
+            include: {
+              organization: {
+                include: {
+                  campus: true,
+                  organizationType: true,
+                },
+              },
+            },
+          },
+          userRoles: {
+            include: {
+              campus: true,
+            },
+          },
+        },
+      });
+    } else {
+      users = await prisma.user.findMany({
+        where: {
+          userRoles: {
+            some: {
+              role: role as Role,
+            },
+          },
+        },
+        include: {
+          userRoles: {
+            where: { role: role as Role },
+            include: {
+              campus: true,
+            },
+          },
+          campus: true,
+          userOrganizations: {
+            include: {
+              organization: {
+                include: {
+                  campus: true,
+                  organizationType: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+
+    return res.status(200).json({
+      message: `Users with ${role} role retrieved successfully`,
+      count: users.length,
+      users: users,
+    });
+  } catch (error) {
+    console.error("Error fetching users by role:", error);
+    return res.status(500).json({
+      error: "An error occurred while fetching users by role.",
+    });
+  }
+};
+
+export const getUserByCampusId = async (req: Request, res: Response) => {
+  const { campusId } = req.params;
+  try {
+    const users = await prisma.user.findMany({
+      where: { campusId },
       include: {
         campus: true,
         userOrganizations: {
-          where: { role: "USER" },
           include: {
             organization: {
               include: {
@@ -169,28 +264,12 @@ const getUserByRole = async (userId: string, role: Role) => {
         },
       },
     });
-  } else {
-    return await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        userRoles: {
-          where: { role },
-          include: {
-            campus: true,
-          },
-        },
-        campus: true,
-        userOrganizations: {
-          include: {
-            organization: {
-              include: {
-                campus: true,
-                organizationType: true,
-              },
-            },
-          },
-        },
-      },
+
+    return res.status(200).json(users);
+  } catch (error) {
+    console.error("Error fetching users by campus ID:", error);
+    return res.status(500).json({
+      error: "An error occurred while fetching users by campus ID.",
     });
   }
 };

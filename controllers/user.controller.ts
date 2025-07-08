@@ -10,7 +10,6 @@ export const getAllUsers = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const currentUser = req.user;
 
-    // ✅ ใช้ userRoles จาก database แทน
     const isAdmin = currentUser.userRoles?.some((role: any) => 
       role.role === "CAMPUS_ADMIN" || role.role === "SUPER_ADMIN"
     );

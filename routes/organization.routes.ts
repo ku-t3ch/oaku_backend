@@ -5,13 +5,11 @@ import {
   requireSuperAdmin 
 } from "../middlewares/auth.middleware";
 import { 
-    getAllCampuses
-} from "../controllers/campus.controller";
+    createOrganization
+} from "../controllers/organization.controller";
 
 const router = Router()
 
-
-// GET /campus/get-campuses Body: {}
-router.get("/get-campuses", authenticateJWT, getAllCampuses);
+router.post("/create-organization", authenticateJWT, requireSuperAdmin, createOrganization)
 
 export default router;

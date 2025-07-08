@@ -5,6 +5,7 @@ import passport from "./configs/passport";
 import { connectDB, checkDBHealth } from "./configs/db";
 import userRoutes from "./routes/user.routes";
 import authRoutes from "./routes/auth.routes";
+import campusRoutes from "./routes/campus.routes";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -29,39 +30,12 @@ app.use(
 );
 
 // Passport middleware
+// Routes
 app.use(passport.initialize());
-
-// Health check endpoint
-app.get("/health", async (req, res) => {
-  const dbHealth = await checkDBHealth();
-  res.json({
-    status: "Backend server is running",
-    port: PORT,
-    environment: process.env.NODE_ENV,
-    database: dbHealth,
-    frontend: FRONTEND_URL,
-    timestamp: new Date().toISOString(),
-  });
-});
-
-// Basic API endpoint
-app.get("/api", (req, res) => {
-  res.json({
-    message: "OAKU Backend API",
-    version: "1.0.0",
-    environment: process.env.NODE_ENV,
-    endpoints: {
-      health: "/health",
-      auth: "/auth/*",
-      users: "/api/users (coming soon)",
-      organizations: "/api/organizations (coming soon)",
-    },
-  });
-});
-
-// Auth routes
 app.use("/auth", authRoutes);
 app.use("/user",userRoutes);
+app.use("/campus",campusRoutes);
+app.use("/organization", );
 
 // 404 handler
 app.use("*", (req, res) => {
@@ -133,5 +107,32 @@ async function startServer() {
 }
 
 startServer();
+
+// app.get("/health", async (req, res) => {
+//   const dbHealth = await checkDBHealth();
+//   res.json({
+//     status: "Backend server is running",
+//     port: PORT,
+//     environment: process.env.NODE_ENV,
+//     database: dbHealth,
+//     frontend: FRONTEND_URL,
+//     timestamp: new Date().toISOString(),
+//   });
+// });
+
+// Basic API endpoint
+// app.get("/api", (req, res) => {
+//   res.json({
+//     message: "OAKU Backend API",
+//     version: "1.0.0",
+//     environment: process.env.NODE_ENV,
+//     endpoints: {
+//       health: "/health",
+//       auth: "/auth/*",
+//       users: "/api/users (coming soon)",
+//       organizations: "/api/organizations (coming soon)",
+//     },
+//   });
+// });
 
 export default app;

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../configs/db";
 
+
 export const createOrganization = async (req: Request, res: Response) => {
   const { nameTh, nameEn, publicOrganizationId, campusId, organizationTypeId } =
     req.body;
@@ -69,3 +70,22 @@ export const createOrganization = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+export const getAllOrganizations = async (req: Request, res: Response) => {
+  try {
+    const organizations = await prisma.organization.findMany({
+      include: {
+        campus: true,
+        organizationType: true,
+      },
+    });
+
+    return res.status(200).json(organizations);
+  } catch (error) {
+    console.error("Error fetching organizations:", error);
+    return res.status(500).json({
+      error: "An error occurred while fetching organizations.",
+    });
+  }
+}

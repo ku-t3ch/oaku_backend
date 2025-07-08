@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import passport from "./configs/passport";
 import { connectDB, checkDBHealth } from "./configs/db";
+import userRoutes from "./routes/user.routes";
 import authRoutes from "./routes/auth.routes";
 import dotenv from "dotenv";
 
@@ -60,6 +61,7 @@ app.get("/api", (req, res) => {
 
 // Auth routes
 app.use("/auth", authRoutes);
+app.use("/user",userRoutes);
 
 // 404 handler
 app.use("*", (req, res) => {

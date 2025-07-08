@@ -1,283 +1,269 @@
 import { Request, Response, NextFunction } from "express";
-import { verifyAccessToken, getUserRoles, getHighestRole } from "../utils/jwt";
-import { Role, User } from "../types/user";
+import jwt from "jsonwebtoken";
+import { prisma } from "../configs/db";
+import { Role, User } from "@prisma/client";
+import { verifyAccessToken } from "../utils/jwt";
+
+interface AuthenticatedRequest extends Request {
+  user?: any;
+}
 
 // JWT Authentication Middleware
-export const authenticateJWT = (
-  req: Request,
+export const authenticateJWT = async (
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-): void => {
+) => {
   try {
     const authHeader = req.headers.authorization;
-
-    if (!authHeader) {
-      res.status(401).json({
-        success: false,
-        message: "Unauthorized: Authorization header is missing",
-        code: "MISSING_AUTH_HEADER",
-      });
-      return;
-    }
-
-    if (!authHeader.startsWith("Bearer ")) {
-      res.status(401).json({
-        success: false,
-        message:
-          "Unauthorized: Invalid authorization format. Use 'Bearer <token>'",
-        code: "INVALID_AUTH_FORMAT",
-      });
-      return;
-    }
-
-    const token = authHeader.substring(7);
+    const token = authHeader && authHeader.split(" ")[1];
 
     if (!token) {
-      res.status(401).json({
-        success: false,
-        message: "Unauthorized: Token is missing",
-        code: "MISSING_TOKEN",
-      });
-      return;
+      return res.status(401).json({ error: "Access token required" });
     }
 
-    const payload = verifyAccessToken(token);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
 
-    // ✅ Create user object from token payload with roles
-    const user: User = {
-      id: payload.userId,
-      userId: payload.userId,
-      name: payload.email.split("@")[0],
-      email: payload.email,
-      phoneNumber: undefined,
-      image: undefined,
-      campusId: payload.campusId || "default-campus",
-      campus: undefined,
-      userOrganizations: [],
-      userRoles: [], // ✅ เพิ่ม userRoles
-      isSuspended: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    // ✅ เพิ่ม roles จาก JWT payload
-    (user as any).roles = payload.roles || ["USER"];
-    (user as any).primaryRole = getHighestRole(payload.roles?.map(r => r as Role) || [Role.USER]);
-
-    req.user = user;
-    next();
-  } catch (error: any) {
-    console.error("JWT Authentication Error:", error.message);
-
-    let errorCode = "AUTH_FAILED";
-    let statusCode = 401;
-
-    if (error.message.includes("expired")) {
-      errorCode = "TOKEN_EXPIRED";
-    } else if (error.message.includes("signature")) {
-      errorCode = "INVALID_SIGNATURE";
-    } else if (error.message.includes("malformed")) {
-      errorCode = "MALFORMED_TOKEN";
-    }
-
-    res.status(statusCode).json({
-      success: false,
-      message: "Unauthorized: Invalid or expired token",
-      code: errorCode,
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
-  }
-};
-
-// ✅ แก้ไข Role-based Authorization Middleware
-export const authorizeRoles = (allowedRoles: Role[]) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    if (!req.user) {
-      res.status(401).json({
-        success: false,
-        message: "Authentication required",
-        code: "AUTH_REQUIRED",
-      });
-      return;
-    }
-
-    // ✅ ใช้ roles array จาก JWT token
-    const userRoles = (req.user as any).roles || ["USER"];
-
-    console.log("🔍 User roles from token:", userRoles);
-    console.log("🔍 Allowed roles:", allowedRoles);
-
-    // ✅ ตรวจสอบว่ามี role ใดตรงกับที่อนุญาตหรือไม่
-    const hasAllowedRole = userRoles.some((role: string) => 
-      allowedRoles.includes(role as Role)
-    );
-
-    if (!hasAllowedRole) {
-      res.status(403).json({
-        success: false,
-        message: "Access denied: Insufficient permissions",
-        code: "INSUFFICIENT_PERMISSIONS",
-        data: {
-          requiredRoles: allowedRoles,
-          userRoles: userRoles,
+    // ดึงข้อมูล user จาก database
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      include: {
+        campus: true,
+        userRoles: {
+          include: {
+            campus: true,
+          },
         },
-      });
-      return;
-    }
-
-    next();
-  };
-};
-
-// ✅ ปรับปรุง Organization-based Authorization
-export const authorizeOrganization = (organizationId?: string) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    if (!req.user) {
-      res.status(401).json({
-        success: false,
-        message: "Authentication required",
-        code: "AUTH_REQUIRED",
-      });
-      return;
-    }
-
-    const targetOrgId =
-      organizationId || req.params.organizationId || req.body.organizationId;
-
-    if (!targetOrgId) {
-      res.status(400).json({
-        success: false,
-        message: "Organization ID required",
-        code: "MISSING_ORG_ID",
-      });
-      return;
-    }
-
-    // ✅ ใช้ roles array
-    const userRoles = (req.user as any).roles || ["USER"];
-
-    // SUPER_ADMIN และ CAMPUS_ADMIN ใช้ได้ทุก organization
-    if (userRoles.includes("SUPER_ADMIN") || userRoles.includes("CAMPUS_ADMIN")) {
-      next();
-      return;
-    }
-
-    // ตรวจสอบว่าผู้ใช้เป็นสมาชิกของ organization นี้หรือไม่
-    const isMember = req.user.userOrganizations?.some(
-      (uo: any) => uo.organizationId === targetOrgId
-    );
-
-    if (!isMember) {
-      res.status(403).json({
-        success: false,
-        message: "Access denied: Not a member of this organization",
-        code: "NOT_ORGANIZATION_MEMBER",
-      });
-      return;
-    }
-
-    next();
-  };
-};
-
-// ✅ อัพเดต Campus-based Authorization
-export const authorizeCampus = (campusId?: string) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    if (!req.user) {
-      res.status(401).json({
-        success: false,
-        message: "Authentication required",
-        code: "AUTH_REQUIRED",
-      });
-      return;
-    }
-
-    const targetCampusId = campusId || req.params.campusId || req.body.campusId;
-    const userRoles = (req.user as any).roles || ["USER"];
-
-    // SUPER_ADMIN ใช้ได้ทุก campus
-    if (userRoles.includes("SUPER_ADMIN")) {
-      next();
-      return;
-    }
-
-    // CAMPUS_ADMIN ใช้ได้เฉพาะ campus ของตัวเอง
-    if (userRoles.includes("CAMPUS_ADMIN")) {
-      if (req.user.campusId === targetCampusId) {
-        next();
-        return;
-      }
-    }
-
-    res.status(403).json({
-      success: false,
-      message: "Access denied: Insufficient campus permissions",
-      code: "INSUFFICIENT_CAMPUS_PERMISSIONS",
+        userOrganizations: {
+          include: {
+            organization: true,
+          },
+        },
+      },
     });
-  };
-};
 
-// Optional Authentication
-export const optionalAuth = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      next();
-      return;
+    if (!user) {
+      return res.status(401).json({ error: "Invalid token" });
     }
 
-    const token = authHeader.substring(7);
-
-    if (!token) {
-      next();
-      return;
+    if (user.isSuspended) {
+      return res.status(403).json({ error: "Account is suspended" });
     }
-
-    const payload = verifyAccessToken(token);
-
-    const user: User = {
-      id: payload.userId,
-      userId: payload.userId,
-      name: payload.email.split("@")[0],
-      email: payload.email,
-      phoneNumber: undefined,
-      image: undefined,
-      campusId: payload.campusId || "default-campus",
-      campus: undefined,
-      userOrganizations: [],
-      userRoles: [],
-      isSuspended: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    // ✅ เพิ่ม roles
-    (user as any).roles = payload.roles || ["USER"];
 
     req.user = user;
     next();
   } catch (error) {
+    console.error("JWT Authentication error:", error);
+    return res.status(401).json({ error: "Invalid token" });
+  }
+};
+
+// ✅ ปรับปรุง requireSuperAdmin ให้ใช้ userRoles จาก database
+export const requireSuperAdmin = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const user = req.user;
+
+  if (!user) {
+    return res.status(401).json({
+      error: "Authentication required",
+    });
+  }
+
+  const isSuperAdmin = user.userRoles?.some((role: any) => role.role === "SUPER_ADMIN");
+
+  if (!isSuperAdmin) {
+    return res.status(403).json({
+      error: "Access denied. Super admin role required.",
+    });
+  }
+
+  next();
+};
+
+// ✅ ปรับปรุง requireCampusAdmin ให้ใช้ userRoles จาก database
+export const requireCampusAdmin = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const user = req.user;
+
+  if (!user) {
+    return res.status(401).json({
+      error: "Authentication required",
+    });
+  }
+
+  const isAdmin = user.userRoles?.some(
+    (role: any) => role.role === "CAMPUS_ADMIN" || role.role === "SUPER_ADMIN"
+  );
+
+  if (!isAdmin) {
+    return res.status(403).json({
+      error: "Access denied. Admin role required.",
+    });
+  }
+
+  next();
+};
+
+// ✅ สร้าง middleware ใหม่สำหรับ role-based authorization
+export const requireRoles = (allowedRoles: Role[]) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const userRoles = user.userRoles?.map((ur: any) => ur.role) || [];
+    const hasRequiredRole = userRoles.some((role: Role) => allowedRoles.includes(role));
+
+    if (!hasRequiredRole) {
+      return res.status(403).json({
+        error: "Access denied. Insufficient permissions.",
+        requiredRoles: allowedRoles,
+        userRoles: userRoles,
+      });
+    }
+
+    next();
+  };
+};
+
+// ✅ Optional Authentication (ไม่บังคับ login)
+export const optionalAuth = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(" ")[1];
+
+    if (!token) {
+      next(); // ไม่มี token ก็ผ่านไป
+      return;
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      include: {
+        campus: true,
+        userRoles: {
+          include: {
+            campus: true,
+          },
+        },
+        userOrganizations: {
+          include: {
+            organization: true,
+          },
+        },
+      },
+    });
+
+    if (user && !user.isSuspended) {
+      req.user = user;
+    }
+
+    next();
+  } catch (error) {
+    // Token ไม่ถูกต้องก็ผ่านไปโดยไม่มี user
     next();
   }
 };
 
-// Pre-defined role middlewares - ✅ ใช้ authorizeRoles ที่แก้ไขแล้ว
-export const adminOnly = authorizeRoles([
-  Role.CAMPUS_ADMIN,
-  Role.SUPER_ADMIN,
-]);
-export const superAdminOnly = authorizeRoles([Role.SUPER_ADMIN]);
-export const campusAdminOrHigher = authorizeRoles([
-  Role.CAMPUS_ADMIN,
-  Role.SUPER_ADMIN,
-]);
-export const userOrHigher = authorizeRoles([
-  Role.USER,
-  Role.CAMPUS_ADMIN,
-  Role.SUPER_ADMIN,
-]);
+// ✅ Campus-based Authorization
+export const requireCampusAccess = (campusId?: string) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const targetCampusId = campusId || req.params.campusId || req.body.campusId;
+
+    // SUPER_ADMIN ใช้ได้ทุก campus
+    const isSuperAdmin = user.userRoles?.some((role: any) => role.role === "SUPER_ADMIN");
+
+    if (isSuperAdmin) {
+      next();
+      return;
+    }
+
+    // CAMPUS_ADMIN ใช้ได้เฉพาะ campus ที่ตัวเองดูแล
+    const isCampusAdmin = user.userRoles?.some(
+      (role: any) => role.role === "CAMPUS_ADMIN" && role.campusId === targetCampusId
+    );
+
+    if (isCampusAdmin) {
+      next();
+      return;
+    }
+
+    // User ธรรมดาใช้ได้เฉพาะ campus ของตัวเอง
+    if (user.campusId === targetCampusId) {
+      next();
+      return;
+    }
+
+    return res.status(403).json({
+      error: "Access denied. Insufficient campus permissions",
+    });
+  };
+};
+
+// ✅ Organization-based Authorization
+export const requireOrganizationAccess = (organizationId?: string) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const targetOrgId = organizationId || req.params.organizationId || req.body.organizationId;
+
+    // SUPER_ADMIN และ CAMPUS_ADMIN ใช้ได้ทุก organization
+    const isAdmin = user.userRoles?.some((role: any) => role.role === "SUPER_ADMIN" || role.role === "CAMPUS_ADMIN");
+
+    if (isAdmin) {
+      next();
+      return;
+    }
+
+    // ตรวจสอบว่าเป็นสมาชิกของ organization นี้หรือไม่
+    const isMember = user.userOrganizations?.some((uo: any) => uo.organizationId === targetOrgId);
+
+    if (!isMember) {
+      return res.status(403).json({
+        error: "Access denied. Not a member of this organization",
+      });
+    }
+
+    next();
+  };
+};
+
+// ✅ Pre-defined role middlewares
+export const adminOnly = requireRoles([Role.CAMPUS_ADMIN, Role.SUPER_ADMIN]);
+export const superAdminOnly = requireRoles([Role.SUPER_ADMIN]);
+export const userOrHigher = requireRoles([Role.USER, Role.CAMPUS_ADMIN, Role.SUPER_ADMIN]);
+
+// Legacy middlewares (เก็บไว้เพื่อ backward compatibility)
+export const authorizeRoles = requireRoles;
+export const authorizeCampus = requireCampusAccess;
+export const authorizeOrganization = requireOrganizationAccess;

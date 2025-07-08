@@ -33,7 +33,7 @@ export const googleCallback = async (req: Request, res: Response) => {
             },
           },
         },
-        userRoles: { // ✅ เพิ่ม userRoles
+        userRoles: { 
           include: {
             campus: true,
           },
@@ -66,15 +66,15 @@ export const googleCallback = async (req: Request, res: Response) => {
       campusId: fullUser.campusId,
     });
 
-    // ✅ ส่ง userData ที่มี roles และ userRoles
+
     const userData = {
       id: fullUser.id,
       userId: fullUser.userId,
       name: fullUser.name,
       email: fullUser.email,
       image: fullUser.image, 
-      roles: userRoles, // ✅ ส่ง array ของ roles
-      primaryRole: highestRole, // ✅ ส่ง primary role สำหรับ backward compatibility
+      roles: userRoles,
+      primaryRole: highestRole, 
       campusId: fullUser.campusId,
       campus: fullUser.campus,
       userOrganizations: fullUser.userOrganizations?.map((uo) => ({

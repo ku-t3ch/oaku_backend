@@ -2,135 +2,25 @@ import { Request, Response } from "express";
 import { prisma } from "../configs/db";
 import { Role, Position } from "@prisma/client";
 
+interface AuthenticatedRequest extends Request {
+  user?: any;
+}
 
-export const createUser = async (req: Request, res: Response) => {
+export const getAllUsers = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const {
-      userId,
-      name,
-      email,
-      phoneNumber,
-      campusId,
-      role,
-      position,
-      organizationId,
-    } = req.body;
+    const currentUser = req.user;
 
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [{ userId: userId }, { email: email }],
-      },
-    });
-    const campus = await prisma.campus.findUnique({
-      where: { id: campusId },
-    });
+    // ✅ ใช้ userRoles จาก database แทน
+    const isAdmin = currentUser.userRoles?.some((role: any) => 
+      role.role === "CAMPUS_ADMIN" || role.role === "SUPER_ADMIN"
+    );
 
-    const userData: any = {
-      userId,
-      name,
-      email,
-      phoneNumber,
-      campusId,
-    };
-
-    if (!userId || !name || !email || !campusId) {
-      return res.status(400).json({
-        error: "Missing required fields",
-        required: ["userId", "name", "email", "campusId"],
+    if (!isAdmin) {
+      return res.status(403).json({
+        error: "Access denied. Admin role required.",
       });
     }
 
-    if (!organizationId) {
-      return res.status(400).json({
-        error: "Missing required fields",
-        required: ["organizationId"],
-      });
-    }
-
-    if (existingUser) {
-      return res.status(400).json({
-        error: "User already exists with this userId or email",
-      });
-    }
-
-    if (!campus) {
-      return res.status(404).json({
-        error: "Campus not found",
-      });
-    }
-
-    let organization = null;
-    if (organizationId) {
-      organization = await prisma.organization.findUnique({
-        where: { id: organizationId },
-      });
-
-      if (!organization) {
-        return res.status(404).json({
-          error: "Organization not found",
-        });
-      }
-    }
-
-    if (organizationId && organization) {
-      userData.userOrganizations = {
-        create: {
-          userIdCode: userId,
-          organizationIdCode: organization.publicOrganizationId,
-          organizationId: organizationId,
-          role: role as Role,
-          position: position as Position,
-        },
-      };
-    }
-
-    const newUser = await prisma.user.create({
-      data: userData,
-      include: {
-        campus: true,
-        userOrganizations: {
-          include: {
-            organization: {
-              include: {
-                campus: true,
-                organizationType: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    return res.status(201).json({
-      message: "User created successfully",
-      user: newUser,
-    });
-  } catch (error) {
-    console.error("Error creating user:", error);
-
-    if (error && typeof error === "object" && "code" in error) {
-      if (error.code === "P2002") {
-        return res.status(400).json({
-          error: "User with this userId or email already exists",
-        });
-      }
-
-      if (error.code === "P2003") {
-        return res.status(400).json({
-          error: "Invalid campusId provided",
-        });
-      }
-    }
-
-    return res.status(500).json({
-      error: "An error occurred while creating the user.",
-    });
-  }
-};
-
-
-export const getAllUsers = async (req: Request, res: Response) => {
-  try {
     const users = await prisma.user.findMany({
       include: {
         campus: true,
@@ -159,4 +49,149 @@ export const getAllUsers = async (req: Request, res: Response) => {
       error: "An error occurred while fetching users.",
     });
   }
-}
+};
+
+export const addRoleAdminToUser = async (req: Request, res: Response) => {
+  const { userId, role } = req.params;
+  const { campusId } = req.body;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (role !== "CAMPUS_ADMIN" && role !== "SUPER_ADMIN") {
+      return res.status(400).json({
+        error: "Invalid role. Only CAMPUS_ADMIN and SUPER_ADMIN are allowed.",
+      });
+    }
+
+    if (role === "CAMPUS_ADMIN" && !campusId) {
+      return res.status(400).json({
+        error: "Campus ID is required for CAMPUS_ADMIN role.",
+      });
+    }
+
+    if (role === "CAMPUS_ADMIN") {
+      const campus = await prisma.campus.findUnique({
+        where: { id: campusId },
+      });
+
+      if (!campus) {
+        return res.status(404).json({ error: "Campus not found" });
+      }
+    }
+
+    const existingRole = await prisma.userRole.findFirst({
+      where: {
+        userId: userId,
+        role: role as Role,
+        campusId: role === "CAMPUS_ADMIN" ? campusId : null,
+      },
+    });
+
+    if (existingRole) {
+      return res.status(409).json({
+        error: "User already has this role",
+      });
+    }
+
+    const newUserRole = await prisma.userRole.create({
+      data: {
+        userId: userId,
+        role: role as Role,
+        campusId: role === "CAMPUS_ADMIN" ? campusId : null,
+      },
+      include: {
+        campus: true,
+      },
+    });
+
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        campus: true,
+        userOrganizations: {
+          include: {
+            organization: {
+              include: {
+                campus: true,
+                organizationType: true,
+              },
+            },
+          },
+        },
+        userRoles: {
+          include: {
+            campus: true,
+          },
+        },
+      },
+    });
+
+    return res.status(200).json({
+      message: "Admin role added successfully",
+      user: updatedUser,
+      newRole: newUserRole,
+    });
+  } catch (error) {
+    console.error("Error adding admin role:", error);
+    return res.status(500).json({
+      error: "An error occurred while adding admin role.",
+    });
+  }
+};
+
+const getUserByRole = async (userId: string, role: Role) => {
+  if (role === "USER") {
+    return await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        campus: true,
+        userOrganizations: {
+          where: { role: "USER" },
+          include: {
+            organization: {
+              include: {
+                campus: true,
+                organizationType: true,
+              },
+            },
+          },
+        },
+        userRoles: {
+          include: {
+            campus: true,
+          },
+        },
+      },
+    });
+  } else {
+    return await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        userRoles: {
+          where: { role },
+          include: {
+            campus: true,
+          },
+        },
+        campus: true,
+        userOrganizations: {
+          include: {
+            organization: {
+              include: {
+                campus: true,
+                organizationType: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+};

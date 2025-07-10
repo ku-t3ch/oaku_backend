@@ -25,6 +25,8 @@ router.get("/", (req: Request, res: Response) => {
         "GET /auth/ - This API info",
         "GET /auth/google - Google OAuth login",
         "GET /auth/google/callback - OAuth callback",
+        "GET /auth/kuall - KUALL OAuth login",
+        "GET /auth/kuall/callback - KUALL OAuth callback",
       ],
       protected: [
         "GET /auth/test - Test protected route (any authenticated user)",
@@ -59,6 +61,18 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { session: false }),
   googleCallback
+);
+
+// KU ALL LOGIN
+router.get(
+  "/kuall",
+  passport.authenticate("kuall", { scope: ["profile", "email"] })
+);
+
+router.get(
+  "/kuall/callback",
+  passport.authenticate("kuall", { session: false }),
+  googleCallback // ใช้ controller เดียวกับ google ได้เลย
 );
 
 router.post(

@@ -1,13 +1,15 @@
+import { Role, Position } from "@prisma/client"; // เพิ่มบรรทัดนี้
+
 export interface UserRole {
   id: string;
   userId: string;
   role: Role;
-  campusId?: string;
+  campusId?: string | null;
   createdAt: Date;
   campus?: {
     id: string;
     name: string;
-  };
+  }|null;
 }
 
 export interface User {
@@ -15,15 +17,15 @@ export interface User {
   userId: string;
   name: string;
   email: string;
-  phoneNumber?: string;
-  image?: string;
+  phoneNumber?: string | null;
+  image?: string | null;
   campusId: string;
   campus?: {
     id: string;
     name: string;
   };
   userOrganizations: UserOrganization[];
-  userRoles?: UserRole[]; // ✅ เพิ่ม userRoles
+  userRoles?: UserRole[];
   isSuspended: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -35,7 +37,7 @@ export interface UserOrganization {
   organizationId: string;
   userIdCode: string;
   organizationIdCode: string;
-  role: Role; // ✅ จะเป็น USER เสมอ
+  role: Role; // จะเป็น USER เสมอ
   position: Position;
   joinedAt: Date;
   organization: {
@@ -43,10 +45,10 @@ export interface UserOrganization {
     publicOrganizationId: string;
     nameEn: string;
     nameTh: string;
-    image: string;
+    image: string | null;
     details: string;
     email: string;
-    phoneNumber?: string;
+    phoneNumber?: string | null;
     campus: {
       id: string;
       name: string;
@@ -58,26 +60,15 @@ export interface UserOrganization {
   };
 }
 
-export enum Role {
-  USER = 'USER',
-  CAMPUS_ADMIN = 'CAMPUS_ADMIN',
-  SUPER_ADMIN = 'SUPER_ADMIN'
-}
-
-export enum Position {
-  HEAD = 'HEAD',
-  MEMBER = 'MEMBER',
-  NON_POSITION = 'NON_POSITION'
-}
 
 export interface JWTUser {
   id: string;
   userId: string;
   name: string;
   email: string;
-  roles: Role[]; // ✅ เปลี่ยนเป็น array
+  roles: Role[];
   campusId?: string;
   userOrganizations: UserOrganization[];
-  userRoles?: UserRole[]; // ✅ เพิ่ม userRoles
+  userRoles?: UserRole[];
   isSuspended: boolean;
 }

@@ -1,6 +1,31 @@
 import { Request, Response } from "express";
 import { prisma } from "../configs/db";
-import { Role, Position } from "@prisma/client";
+import { User } from "../types/user";
+import {
+  Role,
+  Position,
+  Campus,
+  UserOrganization,
+  Organization,
+  OrganizationType,
+  UserRole,
+} from "@prisma/client";
+
+type UserWithRelations = User & {
+  campus: Campus;
+  userOrganizations: (UserOrganization & {
+    organization: Organization & {
+      campus: Campus;
+      organizationType: OrganizationType;
+    };
+  })[];
+  userRoles: (UserRole & {
+    campus: Campus | null;
+  })[];
+  
+
+
+};
 
 interface AuthenticatedRequest extends Request {
   user?: any;
@@ -52,7 +77,7 @@ export const getAllUsers = async (req: AuthenticatedRequest, res: Response) => {
 
 export const addRoleAdminToUser = async (req: Request, res: Response) => {
   const { userId, role } = req.params;
-  const { campusId } = req.body;
+  const { campusId, action } = req.body; // เพิ่ม action
 
   try {
     const user = await prisma.user.findUnique({
@@ -83,6 +108,48 @@ export const addRoleAdminToUser = async (req: Request, res: Response) => {
       if (!campus) {
         return res.status(404).json({ error: "Campus not found" });
       }
+    }
+
+    // ถ้า action เป็น remove ให้ลบ role
+    if (action === "remove") {
+      const deleted = await prisma.userRole.deleteMany({
+        where: {
+          userId: userId,
+          role: role as Role,
+          campusId: role === "CAMPUS_ADMIN" ? campusId : null,
+        },
+      });
+
+      if (deleted.count === 0) {
+        return res.status(404).json({ error: "Role not found for user" });
+      }
+
+      const updatedUser = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          campus: true,
+          userOrganizations: {
+            include: {
+              organization: {
+                include: {
+                  campus: true,
+                  organizationType: true,
+                },
+              },
+            },
+          },
+          userRoles: {
+            include: {
+              campus: true,
+            },
+          },
+        },
+      });
+
+      return res.status(200).json({
+        message: "Admin role removed successfully",
+        user: updatedUser,
+      });
     }
 
     const existingRole = await prisma.userRole.findFirst({
@@ -138,113 +205,155 @@ export const addRoleAdminToUser = async (req: Request, res: Response) => {
       newRole: newUserRole,
     });
   } catch (error) {
-    console.error("Error adding admin role:", error);
+    console.error("Error adding/removing admin role:", error);
     return res.status(500).json({
-      error: "An error occurred while adding admin role.",
+      error: "An error occurred while adding/removing admin role.",
     });
   }
 };
 
-export const getUserByRole = async (req: Request, res: Response) => {
+export const getAllUsersByRoleORCampus = async (
+  req: Request,
+  res: Response
+) => {
+  const { role, campusId } = req.query;
+  if (!role && !campusId) {
+    return res.status(400).json({
+      error: "At least one of role or campusId is required.",
+    });
+  }
+
   try {
-    const { role } = req.body;
-
-
-    if (!role) {
-      return res.status(400).json({
-        error: "Role is required.",
-      });
-    }
-
-    const validRoles = ["USER", "CAMPUS_ADMIN", "SUPER_ADMIN"];
-    if (!validRoles.includes(role)) {
-      return res.status(400).json({
-        error: "Invalid role. Valid roles are: USER, CAMPUS_ADMIN, SUPER_ADMIN",
-      });
-    }
-
-    let users;
-
-    if (role === "USER") {
-
-      users = await prisma.user.findMany({
-        where: {
-          userOrganizations: {
-            some: {
-              role: "USER",
+    const includeOptions = {
+      campus: true,
+      userOrganizations: {
+        include: {
+          organization: {
+            include: {
+              campus: true,
+              organizationType: true,
             },
           },
         },
+      },
+      userRoles: {
         include: {
           campus: true,
-          userOrganizations: {
-            where: { role: "USER" },
-            include: {
-              organization: {
-                include: {
-                  campus: true,
-                  organizationType: true,
+        },
+      },
+    };
+
+    let whereClause: any = {};
+
+    if (role && campusId) {
+      const roleStr = role as string;
+
+      if (roleStr === "USER") {
+        whereClause = {
+          AND: [
+            { campusId: campusId as string },
+            {
+              userOrganizations: {
+                some: {
+                  role: "USER" as Role,
+                  organization: {
+                    campusId: campusId as string,
+                  },
                 },
               },
             },
-          },
-          userRoles: {
-            include: {
-              campus: true,
-            },
-          },
-        },
-      });
-    } else {
-      users = await prisma.user.findMany({
-        where: {
+          ],
+        };
+      } else if (roleStr === "CAMPUS_ADMIN") {
+        whereClause = {
           userRoles: {
             some: {
-              role: role as Role,
+              role: "CAMPUS_ADMIN" as Role,
+              campusId: campusId as string,
             },
           },
-        },
-        include: {
+        };
+      } else if (roleStr === "SUPER_ADMIN") {
+        // SUPER_ADMIN ไม่มี campusId (ข้าม campusId ไปเลย)
+        whereClause = {
           userRoles: {
-            where: { role: role as Role },
-            include: {
-              campus: true,
+            some: {
+              role: "SUPER_ADMIN" as Role,
             },
           },
-          campus: true,
+        };
+      }
+    } else if (role) {
+      // Case: only role provided
+      // This logic was already correct.
+      const roleStr = role as string;
+      if (roleStr === "USER") {
+        whereClause = {
           userOrganizations: {
-            include: {
-              organization: {
-                include: {
-                  campus: true,
-                  organizationType: true,
-                },
-              },
+            some: {
+              role: "USER" as Role,
             },
           },
-        },
-      });
+        };
+      } else if (roleStr === "CAMPUS_ADMIN" || roleStr === "SUPER_ADMIN") {
+        whereClause = {
+          userRoles: {
+            some: {
+              role: roleStr as Role,
+            },
+          },
+        };
+      }
+    } else if (campusId) {
+      whereClause = {
+        campusId: campusId as string,
+      };
     }
 
+    const users: UserWithRelations[] = await prisma.user.findMany({
+      where: whereClause,
+      include: includeOptions,
+    });
 
     return res.status(200).json({
-      message: `Users with ${role} role retrieved successfully`,
+      message: "Users retrieved successfully",
       count: users.length,
-      users: users,
+      users,
     });
   } catch (error) {
-    console.error("Error fetching users by role:", error);
+    console.error("Error fetching users by role and campus:", error);
     return res.status(500).json({
-      error: "An error occurred while fetching users by role.",
+      error: "An error occurred while fetching users by role and campus.",
+      details: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
 
-export const getUserByCampusId = async (req: Request, res: Response) => {
-  const { campusId } = req.params;
+
+export const editInfoUser = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  const { userId } = req.params;
+  const { name, email, phoneNumber, image } = req.body;
+
   try {
-    const users = await prisma.user.findMany({
-      where: { campusId },
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name,
+        email,
+        phoneNumber,
+        image,
+      },
       include: {
         campus: true,
         userOrganizations: {
@@ -265,11 +374,15 @@ export const getUserByCampusId = async (req: Request, res: Response) => {
       },
     });
 
-    return res.status(200).json(users);
+    return res.status(200).json({
+      message: "User information updated successfully",
+      user: updatedUser,
+    });
   } catch (error) {
-    console.error("Error fetching users by campus ID:", error);
+    console.error("Error updating user information:", error);
     return res.status(500).json({
-      error: "An error occurred while fetching users by campus ID.",
+      error: "An error occurred while updating user information.",
     });
   }
-};
+}
+

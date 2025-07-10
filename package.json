@@ -12,7 +12,6 @@
     "build": "tsc",
     "build:clean": "rm -rf dist && npm run build",
     "build:watch": "tsc --watch",
-    
     "docker:build": "docker-compose build --no-cache",
     "docker:up": "docker-compose up -d postgres",
     "docker:up:all": "docker-compose up -d",
@@ -22,11 +21,9 @@
     "docker:logs": "docker-compose logs -f",
     "docker:logs:db": "docker-compose logs -f postgres",
     "docker:logs:backend": "docker-compose logs -f backend",
-    
     "setup": "npm run docker:clean && npm run docker:up && sleep 15 && npm run db:push && npm run db:seed",
     "setup:dev": "npm install && npm run build && npm run db:reset && npm run db:seed",
     "setup:first": "npm install && npm run docker:up && sleep 10 && npm run db:push && npm run db:seed",
-    
     "db:push": "npx prisma db push",
     "db:reset": "npx prisma db push --force-reset",
     "db:seed": "npx prisma db seed",
@@ -36,7 +33,6 @@
     "db:generate": "npx prisma generate",
     "db:format": "npx prisma format",
     "db:deploy": "npx prisma migrate deploy",
-    
     "clean": "rm -rf dist node_modules package-lock.json",
     "clean:install": "npm run clean && npm install",
     "typecheck": "tsc --noEmit",
@@ -50,6 +46,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.10.1",
+    "axios": "^1.10.0",
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -60,8 +57,9 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
-    "pg": "^8.16.3",
-    "path-to-regexp": "^6.2.1"
+    "passport-oauth2": "^1.8.0",
+    "path-to-regexp": "^6.2.1",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

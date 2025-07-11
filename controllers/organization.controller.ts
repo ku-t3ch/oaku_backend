@@ -65,7 +65,7 @@ export const createOrganization = async (req: Request, res: Response) => {
         details,
         email,
         phoneNumber: phoneNumber || null,
-        socialMedia: socialMedia || null, // เก็บเป็น JSON
+        socialMedia: socialMedia || null, 
       },
       include: {
         campus: true,

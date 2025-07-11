@@ -88,12 +88,11 @@ export const getUsersByRoleOrCampusIdOrOrganizationTypeIdOrOrganizationId =
     }
   };
 
-export const getUserByUserId = async (req: Request, res: Response) => {
-  const { userId } = req.params;
-
+export const getUserById = async (req: Request, res: Response) => {
+  const { id } = req.params; // <-- แก้จาก userId เป็น id
   try {
     const user = await prisma.user.findUnique({
-      where: { userId },
+      where: { id }, // <-- ใช้ id (primary key)
       include: {
         campus: true,
         userOrganizations: {
@@ -126,12 +125,12 @@ export const getUserByUserId = async (req: Request, res: Response) => {
 };
 
 export const editInfoUser = async (req: Request, res: Response) => {
-  const { userId } = req.params;
+  const { id } = req.params;
   const { name, email, phoneNumber, image } = req.body;
 
   try {
     const updatedUser = await prisma.user.update({
-      where: { userId },
+      where: { id },
       data: {
         name,
         email,
@@ -166,12 +165,12 @@ export const editInfoUser = async (req: Request, res: Response) => {
 };
 
 export const AddOrRemoveCampusAdmin = async (req: Request, res: Response) => {
-  const { userId } = req.params;
+  const { id } = req.params;
   const { role, campusId } = req.body;
 
   try {
     const user = await prisma.user.findUnique({
-      where: { userId },
+      where: { id },
       include: {
         userRoles: true,
       },
@@ -207,11 +206,11 @@ export const AddOrRemoveCampusAdmin = async (req: Request, res: Response) => {
 };
 
 export const AddSuperAdmin = async (req: Request, res: Response) => {
-  const { userId } = req.params;
+  const { id } = req.params;
 
   try {
     const user = await prisma.user.findUnique({
-      where: { userId },
+      where: { id },
       include: {
         userRoles: true,
       },
@@ -240,11 +239,12 @@ export const AddSuperAdmin = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 export const AddUserToOrganizationTypeAndOrganization = async (
   req: Request,
   res: Response
 ) => {
-  const { userId } = req.params;
+  const { id } = req.params;
   const {
     organizationTypeId,
     organizationId,
@@ -254,7 +254,7 @@ export const AddUserToOrganizationTypeAndOrganization = async (
 
   try {
     const user = await prisma.user.findUnique({
-      where: { userId },
+      where: { id },
       include: {
         userOrganizations: true,
       },
@@ -278,8 +278,8 @@ export const AddUserToOrganizationTypeAndOrganization = async (
       data: {
         userId: user.id,
         organizationId,
-        userIdCode: user.userId, 
-        organizationIdCode: organizationId, 
+        userIdCode: user.userId,
+        organizationIdCode: organizationId,
         role, // default "USER"
         position, // default "MEMBER"
       },
@@ -291,5 +291,3 @@ export const AddUserToOrganizationTypeAndOrganization = async (
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
-

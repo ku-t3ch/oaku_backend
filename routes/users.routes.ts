@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   getUsers,
   getUsersByRoleOrCampusIdOrOrganizationTypeIdOrOrganizationId,
-  getUserByUserId,
+  getUserById,
   editInfoUser,
   AddOrRemoveCampusAdmin,
   AddSuperAdmin,
@@ -30,7 +30,7 @@ router.get(
 );
 
 //GET /users/:id
-router.get("/:id", authenticateJWT, headOrAdminOnly, getUserByUserId);
+router.get("/:id", authenticateJWT, headOrAdminOnly, getUserById);
 
 //PUT /users/:id
 router.put("/:id", authenticateJWT, headOrAdminOnly, editInfoUser);

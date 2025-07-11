@@ -59,7 +59,9 @@
     "passport-jwt": "^4.0.1",
     "passport-oauth2": "^1.8.0",
     "path-to-regexp": "^6.2.1",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -72,6 +74,8 @@
     "@types/passport-google-oauth20": "^2.0.16",
     "@types/passport-jwt": "^4.0.1",
     "@types/pg": "^8.15.4",
+    "@types/swagger-ui-express": "^4.1.8",
+    "@types/yamljs": "^0.2.34",
     "prisma": "^6.10.1",
     "tsx": "^4.6.2",
     "typescript": "^5.3.3"

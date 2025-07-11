@@ -1,40 +1,38 @@
-import { Request, Response } from "express";
 import { prisma } from "../configs/db";
+import { Request, Response } from "express";
 
-export const getAllOrganizationsType = async (req: Request, res: Response) => {
-    try {
-        const organizationsType = await prisma.organizationType.findMany({
-            select:{
-                id: true,
-                name: true,
-            }
-        });
-        return res.status(200).json(organizationsType);
-    } catch (error) {
-        console.error("Error fetching organizations:", error);
-        return res.status(500).json({
-        error: "An error occurred while fetching organizations.",
-        });
-    }
-};
+export const getOrganizationTypes = async (req: Request, res: Response) => {
+  const { campusId } = req.query;
 
-export const getAllOrganizationsTypeByCampusId = async (req: Request, res: Response) => {
-    const campusId = req.params.campusId;
-    try {
-        const organizationsType = await prisma.organizationType.findMany({
-            where: {
-                campusId: campusId,
+  try {
+    if (campusId) {
+      // ดึง organizationTypes เฉพาะ campusId ที่เลือก
+      const organizationTypes = await prisma.organizationType.findMany({
+        where: { campusId: campusId as string },
+        include: {
+          organizations: {
+            include: {
+              campus: true,
             },
-            select:{
-                id: true,
-                name: true,
-            }
-        });
-        return res.status(200).json(organizationsType);
-    } catch (error) {
-        console.error("Error fetching organizations:", error);
-        return res.status(500).json({
-        error: "An error occurred while fetching organizations.",
-        });
+          },
+        },
+      });
+      return res.status(200).json(organizationTypes);
+    } else {
+      // ดึง organizationTypes ทั้งหมด
+      const organizationTypes = await prisma.organizationType.findMany({
+        include: {
+          organizations: {
+            include: {
+              campus: true,
+            },
+          },
+        },
+      });
+      return res.status(200).json(organizationTypes);
     }
+  } catch (error) {
+    console.error("Error fetching organization types:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 };

@@ -1,19 +1,10 @@
 import { Router } from "express";
-import { 
-  authenticateJWT, 
-  requireCampusAdmin, 
-  requireSuperAdmin 
-} from "../middlewares/auth.middleware";
-import{
-    getAllOrganizationsType,
-    getAllOrganizationsTypeByCampusId
-} from "../controllers/organizationType.controller";
+import { getOrganizationTypes } from "../controllers/organizationType.controller";
+import { authenticateJWT, ALLROLE } from "../middlewares/auth.middleware";
 
 const router = Router();
 
-// GET /organizationType/get-organization-type
-// GET /organizationType/get-organization-type-by-campus/:campusId body: {campusId: string}
-router.get("/get-organization-type", authenticateJWT, requireCampusAdmin, getAllOrganizationsType);
-router.get("/get-organization-type-by-campus/:campusId", authenticateJWT, requireCampusAdmin, getAllOrganizationsTypeByCampusId);
+// GET /organization-types (รองรับ query ?campusId=xxx)
+router.get("/", authenticateJWT, ALLROLE, getOrganizationTypes);
 
 export default router;

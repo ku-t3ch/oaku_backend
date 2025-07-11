@@ -3,11 +3,13 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import passport from "./configs/passport";
 import { connectDB, checkDBHealth } from "./configs/db";
-import userRoutes from "./routes/user.routes";
+import userRoutes from "./routes/users.routes";
 import authRoutes from "./routes/auth.routes";
 import campusRoutes from "./routes/campus.routes";
 import organizationRoutes from "./routes/organization.routes";
 import organizationTypeRoutes from "./routes/organizationType.routes";
+import { swaggerUiServe, swaggerUiSetup } from "./swagger";
+
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -35,10 +37,11 @@ app.use(
 // Routes
 app.use(passport.initialize());
 app.use("/auth", authRoutes);
-app.use("/user",userRoutes);
-app.use("/campus",campusRoutes);
-app.use("/organization",organizationRoutes); 
-app.use("/organizationType", organizationTypeRoutes);
+app.use("/users", userRoutes);
+app.use("/campus", campusRoutes);
+app.use("/organizations", organizationRoutes);
+app.use("/organization-types", organizationTypeRoutes);
+app.use("/api-docs", swaggerUiServe, swaggerUiSetup);
 
 // 404 handler
 app.use("*", (req, res) => {

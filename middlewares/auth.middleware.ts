@@ -1,14 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../configs/db";
-import { Role, User } from "@prisma/client";
-import { verifyAccessToken } from "../utils/jwt";
+import { Role } from "@prisma/client";
 
-interface AuthenticatedRequest extends Request {
+// ---------- Types ----------
+export interface AuthenticatedRequest extends Request {
   user?: any;
 }
 
-// JWT Authentication Middleware
+// ---------- JWT Authentication ----------
 export const authenticateJWT = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -17,38 +17,21 @@ export const authenticateJWT = async (
   try {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(" ")[1];
-
-    if (!token) {
-      return res.status(401).json({ error: "Access token required" });
-    }
+    if (!token) return res.status(401).json({ error: "Access token required" });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-
-    // ดึงข้อมูล user จาก database
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       include: {
         campus: true,
-        userRoles: {
-          include: {
-            campus: true,
-          },
-        },
-        userOrganizations: {
-          include: {
-            organization: true,
-          },
-        },
+        userRoles: { include: { campus: true } },
+        userOrganizations: { include: { organization: true } },
       },
     });
 
-    if (!user) {
-      return res.status(401).json({ error: "Invalid token" });
-    }
-
-    if (user.isSuspended) {
+    if (!user) return res.status(401).json({ error: "Invalid token" });
+    if (user.isSuspended)
       return res.status(403).json({ error: "Account is suspended" });
-    }
 
     req.user = user;
     next();
@@ -58,85 +41,37 @@ export const authenticateJWT = async (
   }
 };
 
-// ✅ ปรับปรุง requireSuperAdmin ให้ใช้ userRoles จาก database
-export const requireSuperAdmin = (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  const user = req.user;
-
-  if (!user) {
-    return res.status(401).json({
-      error: "Authentication required",
-    });
-  }
-
-  const isSuperAdmin = user.userRoles?.some((role: any) => role.role === "SUPER_ADMIN");
-
-  if (!isSuperAdmin) {
-    return res.status(403).json({
-      error: "Access denied. Super admin role required.",
-    });
-  }
-
-  next();
-};
-
-// ✅ ปรับปรุง requireCampusAdmin ให้ใช้ userRoles จาก database
-export const requireCampusAdmin = (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  const user = req.user;
-
-  if (!user) {
-    return res.status(401).json({
-      error: "Authentication required",
-    });
-  }
-
-  const isAdmin = user.userRoles?.some(
-    (role: any) => role.role === "CAMPUS_ADMIN" || role.role === "SUPER_ADMIN"
-  );
-
-  if (!isAdmin) {
-    return res.status(403).json({
-      error: "Access denied. Admin role required.",
-    });
-  }
-
-  next();
-};
-
-// ✅ สร้าง middleware ใหม่สำหรับ role-based authorization
-export const requireRoles = (allowedRoles: Role[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+// ---------- Role-based Middleware ----------
+export const requireRoles =
+  (allowedRoles: Role[]) =>
+  (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const user = req.user;
-
-    if (!user) {
-      return res.status(401).json({
-        error: "Authentication required",
-      });
-    }
+    if (!user)
+      return res.status(401).json({ error: "Authentication required" });
 
     const userRoles = user.userRoles?.map((ur: any) => ur.role) || [];
-    const hasRequiredRole = userRoles.some((role: Role) => allowedRoles.includes(role));
-
+    const hasRequiredRole = userRoles.some((role: Role) =>
+      allowedRoles.includes(role)
+    );
     if (!hasRequiredRole) {
       return res.status(403).json({
         error: "Access denied. Insufficient permissions.",
         requiredRoles: allowedRoles,
-        userRoles: userRoles,
+        userRoles,
       });
     }
-
     next();
   };
-};
 
-// ✅ Optional Authentication (ไม่บังคับ login)
+export const adminOnly = requireRoles([Role.CAMPUS_ADMIN, Role.SUPER_ADMIN]);
+export const superAdminOnly = requireRoles([Role.SUPER_ADMIN]);
+export const userOrHigher = requireRoles([
+  Role.USER,
+  Role.CAMPUS_ADMIN,
+  Role.SUPER_ADMIN,
+]);
+
+// ---------- Optional Auth Middleware ----------
 export const optionalAuth = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -145,125 +80,119 @@ export const optionalAuth = async (
   try {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(" ")[1];
-
-    if (!token) {
-      next(); // ไม่มี token ก็ผ่านไป
-      return;
-    }
+    if (!token) return next();
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       include: {
         campus: true,
-        userRoles: {
-          include: {
-            campus: true,
-          },
-        },
-        userOrganizations: {
-          include: {
-            organization: true,
-          },
-        },
+        userRoles: { include: { campus: true } },
+        userOrganizations: { include: { organization: true } },
       },
     });
 
-    if (user && !user.isSuspended) {
-      req.user = user;
-    }
-
+    if (user && !user.isSuspended) req.user = user;
     next();
-  } catch (error) {
-    // Token ไม่ถูกต้องก็ผ่านไปโดยไม่มี user
+  } catch {
     next();
   }
 };
 
-// ✅ Campus-based Authorization
-export const requireCampusAccess = (campusId?: string) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+// ---------- Campus Access Middleware ----------
+export const requireCampusAccess =
+  (campusId?: string) =>
+  (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const user = req.user;
-
-    if (!user) {
-      return res.status(401).json({
-        error: "Authentication required",
-      });
-    }
+    if (!user)
+      return res.status(401).json({ error: "Authentication required" });
 
     const targetCampusId = campusId || req.params.campusId || req.body.campusId;
-
-    // SUPER_ADMIN ใช้ได้ทุก campus
-    const isSuperAdmin = user.userRoles?.some((role: any) => role.role === "SUPER_ADMIN");
-
-    if (isSuperAdmin) {
-      next();
-      return;
-    }
-
-    // CAMPUS_ADMIN ใช้ได้เฉพาะ campus ที่ตัวเองดูแล
+    const isSuperAdmin = user.userRoles?.some(
+      (role: any) => role.role === "SUPER_ADMIN"
+    );
     const isCampusAdmin = user.userRoles?.some(
-      (role: any) => role.role === "CAMPUS_ADMIN" && role.campusId === targetCampusId
+      (role: any) =>
+        role.role === "CAMPUS_ADMIN" && role.campusId === targetCampusId
+    );
+    const isSameCampus = user.campusId === targetCampusId;
+
+    if (isSuperAdmin || isCampusAdmin || isSameCampus) return next();
+
+    return res
+      .status(403)
+      .json({ error: "Access denied. Insufficient campus permissions" });
+  };
+
+// ---------- Organization Access Middleware ----------
+export const requireOrganizationAccess =
+  (organizationId?: string) =>
+  (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const user = req.user;
+    if (!user)
+      return res.status(401).json({ error: "Authentication required" });
+
+    const targetOrgId =
+      organizationId || req.params.organizationId || req.body.organizationId;
+    const isAdmin = user.userRoles?.some(
+      (role: any) => role.role === "SUPER_ADMIN" || role.role === "CAMPUS_ADMIN"
+    );
+    const isMember = user.userOrganizations?.some(
+      (uo: any) => uo.organizationId === targetOrgId
     );
 
-    if (isCampusAdmin) {
-      next();
-      return;
-    }
+    if (isAdmin || isMember) return next();
 
-    // User ธรรมดาใช้ได้เฉพาะ campus ของตัวเอง
-    if (user.campusId === targetCampusId) {
-      next();
-      return;
-    }
-
-    return res.status(403).json({
-      error: "Access denied. Insufficient campus permissions",
-    });
+    return res
+      .status(403)
+      .json({ error: "Access denied. Not a member of this organization" });
   };
+
+// ---------- SUPER_ADMIN > CAMPUS_ADMIN > USER-HEAD Middleware ----------
+export const headOrAdminOnly = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const user = req.user;
+  const isSuperAdmin = user?.userRoles?.some(
+    (ur: any) => ur.role === "SUPER_ADMIN"
+  );
+  const isCampusAdmin = user?.userRoles?.some(
+    (ur: any) => ur.role === "CAMPUS_ADMIN"
+  );
+  const isHead = user?.userOrganizations?.some(
+    (uo: any) => uo.position === "HEAD"
+  );
+
+  if (isSuperAdmin || isCampusAdmin || isHead) return next();
+
+  return res.status(403).json({
+    error:
+      "Access denied. Only SUPER_ADMIN, CAMPUS_ADMIN, or USER-HEAD allowed.",
+  });
 };
 
-// ✅ Organization-based Authorization
-export const requireOrganizationAccess = (organizationId?: string) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const user = req.user;
+// ---------- SUPER_ADMIN > CAMPUS_ADMIN > USER-HEAD > USER-MEMBER Middleware ----------
+export const ALLROLE = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const user = req.user;
+  const isSuperAdmin = user?.userRoles?.some((ur: any) => ur.role === "SUPER_ADMIN");
+  const isCampusAdmin = user?.userRoles?.some((ur: any) => ur.role === "CAMPUS_ADMIN");
+  const isHead = user?.userOrganizations?.some((uo: any) => uo.position === "HEAD");
+  const isMember = user?.userOrganizations?.some((uo: any) => uo.position === "MEMBER");
 
-    if (!user) {
-      return res.status(401).json({
-        error: "Authentication required",
-      });
-    }
+  if (isSuperAdmin || isCampusAdmin || isHead || isMember) return next();
 
-    const targetOrgId = organizationId || req.params.organizationId || req.body.organizationId;
-
-    // SUPER_ADMIN และ CAMPUS_ADMIN ใช้ได้ทุก organization
-    const isAdmin = user.userRoles?.some((role: any) => role.role === "SUPER_ADMIN" || role.role === "CAMPUS_ADMIN");
-
-    if (isAdmin) {
-      next();
-      return;
-    }
-
-    // ตรวจสอบว่าเป็นสมาชิกของ organization นี้หรือไม่
-    const isMember = user.userOrganizations?.some((uo: any) => uo.organizationId === targetOrgId);
-
-    if (!isMember) {
-      return res.status(403).json({
-        error: "Access denied. Not a member of this organization",
-      });
-    }
-
-    next();
-  };
+  return res.status(403).json({
+    error: "Access denied. Only SUPER_ADMIN, CAMPUS_ADMIN, USER-HEAD, or USER-MEMBER allowed.",
+  });
 };
 
-// ✅ Pre-defined role middlewares
-export const adminOnly = requireRoles([Role.CAMPUS_ADMIN, Role.SUPER_ADMIN]);
-export const superAdminOnly = requireRoles([Role.SUPER_ADMIN]);
-export const userOrHigher = requireRoles([Role.USER, Role.CAMPUS_ADMIN, Role.SUPER_ADMIN]);
-
-// Legacy middlewares (เก็บไว้เพื่อ backward compatibility)
+// ---------- Export Aliases ----------
 export const authorizeRoles = requireRoles;
 export const authorizeCampus = requireCampusAccess;
 export const authorizeOrganization = requireOrganizationAccess;

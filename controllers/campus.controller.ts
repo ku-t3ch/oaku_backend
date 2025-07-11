@@ -1,22 +1,17 @@
-import { Request, Response } from "express";
 import { prisma } from "../configs/db";
+import { Request, Response } from "express";
 
-export const getAllCampuses = async (req: Request, res: Response) => {
+export const getAllCampus = async (req: Request, res: Response) => {
   try {
     const campuses = await prisma.campus.findMany({
-        select:{
-            name: true,
-            id: true,
-        }
+      select: {
+        id: true,
+        name: true,
+      },
     });
-
-    return res.status(200).json(campuses);
+    res.status(200).json(campuses);
   } catch (error) {
-    console.error("Error fetching campuses:", error);
-    return res.status(500).json({
-      error: "An error occurred while fetching campuses.",
-    });
+    console.error("Error fetching campus:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
-

@@ -1,22 +1,22 @@
-import { Router } from "express";
-import { 
-  authenticateJWT, 
-  requireCampusAdmin, 
-  requireSuperAdmin 
-} from "../middlewares/auth.middleware";
-import { 
-    createOrganization,
-    getAllOrganizations
+import e, { Router } from "express";
+import {
+  getOrganizations,
+  createOrganization,
 } from "../controllers/organization.controller";
+import {
+  authenticateJWT,
+  adminOnly,
+  superAdminOnly,
+  headOrAdminOnly,
+  ALLROLE,
+} from "../middlewares/auth.middleware";
 
-const router = Router()
+const router = Router();
 
-// POST /organization/create-organization body: { nameTh: string, nameEn: string, publicOrganizationId: string, campusId: string, organizationTypeId: string }
-router.post("/create-organization", authenticateJWT, requireSuperAdmin, createOrganization)
+// GET /organizations?campusId=CAMPUS_ID&organizationTypeId=ORGANIZATION_TYPE_ID
+router.get("/", authenticateJWT, ALLROLE, getOrganizations);
 
-// GET /organization/get-organization Body: {}
-router.get("/get-organization", authenticateJWT, requireSuperAdmin, getAllOrganizations)
-
-
+// POST /organizations 
+router.post("/", authenticateJWT, superAdminOnly, createOrganization);
 
 export default router;

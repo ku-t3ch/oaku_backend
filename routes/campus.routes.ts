@@ -1,17 +1,17 @@
 import { Router } from "express";
-import { 
-  authenticateJWT, 
-  requireCampusAdmin, 
-  requireSuperAdmin 
+import { getAllCampus } from "../controllers/campus.controller";
+import {
+  authenticateJWT,
+  adminOnly,
+  superAdminOnly,
+  headOrAdminOnly,
+  ALLROLE,
 } from "../middlewares/auth.middleware";
-import { 
-    getAllCampuses
-} from "../controllers/campus.controller";
 
-const router = Router()
+const router = Router();
 
-
-// GET /campus/get-campuses Body: {}
-router.get("/get-campuses", authenticateJWT, getAllCampuses);
+// GET /campus
+router.get("/", authenticateJWT, ALLROLE, getAllCampus);
 
 export default router;
+

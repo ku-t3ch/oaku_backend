@@ -23,3 +23,4 @@ router.get(
   ALLROLE,
   getOrganizationsByCampusId
 );
+export default router;

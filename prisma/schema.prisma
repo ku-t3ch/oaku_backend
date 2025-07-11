@@ -60,7 +60,7 @@ model Campus {
   organizationTypes OrganizationType[]
   projects          Project[]
   users             User[]
-  userRoles         UserRole[]         // ✅ เพิ่มบรรทัดนี้
+  userRoles         UserRole[]       
 }
 
 model OrganizationType {

@@ -6,6 +6,8 @@ import { connectDB, checkDBHealth } from "./configs/db";
 import userRoutes from "./routes/users.routes";
 import authRoutes from "./routes/auth.routes";
 import campusRoutes from "./routes/campus.routes";
+import organizationRoutes from "./routes/organization.routes";
+import organizationTypeRoutes from "./routes/organizationType.routes";
 
 import dotenv from "dotenv";
 
@@ -34,8 +36,11 @@ app.use(
 // Routes
 app.use(passport.initialize());
 app.use("/auth", authRoutes);
-app.use("/users",userRoutes);
+app.use("/users", userRoutes);
 app.use("/campus", campusRoutes);
+app.use("/organizations", organizationRoutes);
+app.use("/organization-types", organizationTypeRoutes);
+
 
 // 404 handler
 app.use("*", (req, res) => {

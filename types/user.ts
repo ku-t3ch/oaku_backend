@@ -1,4 +1,4 @@
-import { Role, Position } from "@prisma/client"; // เพิ่มบรรทัดนี้
+import { Role, Position } from "@prisma/client"; 
 
 export interface UserRole {
   id: string;
@@ -9,7 +9,7 @@ export interface UserRole {
   campus?: {
     id: string;
     name: string;
-  }|null;
+  } | null;
 }
 
 export interface User {
@@ -37,7 +37,7 @@ export interface UserOrganization {
   organizationId: string;
   userIdCode: string;
   organizationIdCode: string;
-  role: Role; // จะเป็น USER เสมอ
+  role: Role;
   position: Position;
   joinedAt: Date;
   organization: {
@@ -59,7 +59,6 @@ export interface UserOrganization {
     };
   };
 }
-
 
 export interface JWTUser {
   id: string;

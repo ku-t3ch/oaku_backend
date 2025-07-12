@@ -23,6 +23,60 @@ export const getOrganizations = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+export const editOrganization = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const {
+    nameEn,
+    nameTh,
+    campusId,
+    organizationTypeId,
+    publicOrganizationId,
+    email,
+    phoneNumber,
+    image,
+    details,
+    socialMedia,
+  } = req.body;
+
+  try {
+    // ตรวจสอบว่ามี organization นี้อยู่จริง
+    const org = await prisma.organization.findUnique({ where: { id } });
+    if (!org) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+
+    // อัปเดตข้อมูล
+    const updated = await prisma.organization.update({
+      where: { id },
+      data: {
+        nameEn: nameEn?.trim() ?? org.nameEn,
+        nameTh: nameTh?.trim() ?? org.nameTh,
+        campusId: campusId ?? org.campusId,
+        organizationTypeId: organizationTypeId ?? org.organizationTypeId,
+        publicOrganizationId: publicOrganizationId ?? org.publicOrganizationId,
+        email: email ?? org.email,
+        phoneNumber: phoneNumber ?? org.phoneNumber,
+        image: image ?? org.image,
+        details: details ?? org.details,
+        socialMedia: socialMedia ?? org.socialMedia,
+      },
+      include: {
+        campus: true,
+        organizationType: true,
+      },
+    });
+
+    res.status(200).json(updated);
+  } catch (error: any) {
+    if (error.code === "P2002") {
+      return res.status(409).json({ error: "Duplicate unique field" });
+    }
+    console.error("Error editing organization:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 export const createOrganization = async (req: Request, res: Response) => {
   const { nameEn, nameTh, campusId, organizationTypeId, publicOrganizationId } =
     req.body;
@@ -84,3 +138,4 @@ export const createOrganization = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+

@@ -23,7 +23,6 @@ paths:
       responses:
         200:
           description: List of users
-
   /users/filter:
     get:
       summary: Filter users
@@ -50,7 +49,6 @@ paths:
       responses:
         200:
           description: List of filtered users
-
   /users/{id}:
     get:
       summary: Get user by ID
@@ -95,7 +93,6 @@ paths:
       responses:
         200:
           description: User updated
-
   /users/{id}/admin:
     post:
       summary: Add or remove campus admin role
@@ -127,7 +124,6 @@ paths:
           description: Role removed
         201:
           description: Role added
-
   /users/{id}/superadmin:
     post:
       summary: Add super admin role
@@ -143,7 +139,6 @@ paths:
       responses:
         201:
           description: Super admin added
-
   /users/{id}/organization:
     post:
       summary: Add user to organization
@@ -163,17 +158,20 @@ paths:
             schema:
               type: object
               properties:
+                organizationTypeId:
+                  type: string
                 organizationId:
                   type: string
                 role:
                   type: string
+                position:
+                  type: string
               required:
+                - organizationTypeId
                 - organizationId
-                - role
       responses:
-        200:
-          description: User organization updated
-
+        201:
+          description: User added to organization
   /organizations:
     get:
       summary: Get organizations
@@ -238,7 +236,50 @@ paths:
       responses:
         201:
           description: Organization created
-
+  /organizations/{id}:
+    put:
+      summary: Edit organization
+      tags: [Organization]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nameEn:
+                  type: string
+                nameTh:
+                  type: string
+                campusId:
+                  type: string
+                organizationTypeId:
+                  type: string
+                publicOrganizationId:
+                  type: string
+                image:
+                  type: string
+                details:
+                  type: string
+                email:
+                  type: string
+                phoneNumber:
+                  type: string
+                socialMedia:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        200:
+          description: Organization updated
   /organization-types:
     get:
       summary: Get all organization types
@@ -248,8 +289,7 @@ paths:
       responses:
         200:
           description: List of organization types
-
-  /campuses:
+  /campus:
     get:
       summary: Get all campuses
       tags: [Campus]

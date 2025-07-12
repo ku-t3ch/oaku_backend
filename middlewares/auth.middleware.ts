@@ -30,8 +30,14 @@ export const authenticateJWT = async (
     });
 
     if (!user) return res.status(401).json({ error: "Invalid token" });
-    if (user.isSuspended)
-      return res.status(403).json({ error: "Account is suspended" });
+
+    // ข้ามการเช็ค suspend เฉพาะ GET /campus
+    // if (
+    //   !(req.method === "GET" && req.baseUrl === "/campus") &&
+    //   user.isSuspended
+    // ) {
+    //   return res.status(403).json({ error: "Account is suspended" });
+    // }
 
     req.user = user;
     next();

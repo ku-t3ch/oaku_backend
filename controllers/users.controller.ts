@@ -89,10 +89,10 @@ export const getUsersByRoleOrCampusIdOrOrganizationTypeIdOrOrganizationId =
   };
 
 export const getUserById = async (req: Request, res: Response) => {
-  const { id } = req.params; // <-- แก้จาก userId เป็น id
+  const { id } = req.params;
   try {
     const user = await prisma.user.findUnique({
-      where: { id }, // <-- ใช้ id (primary key)
+      where: { id }, 
       include: {
         campus: true,
         userOrganizations: {
@@ -291,3 +291,40 @@ export const AddUserToOrganizationTypeAndOrganization = async (
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+export const SuperAdminSuspendUser = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { isSuspended = true } = req.body; // รับค่าจาก body, default true
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        userRoles: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // เช็คว่ามี role SUPER_ADMIN หรือไม่
+    const isSuperAdmin = user.userRoles.some((role) => role.role === "SUPER_ADMIN");
+    if (isSuperAdmin) {
+      return res.status(403).json({ error: "Cannot suspend SUPER_ADMIN" });
+    }
+
+    await prisma.user.update({
+      where: { id },
+      data: { isSuspended },
+    });
+
+    res.status(200).json({
+      message: isSuspended
+        ? "User suspended successfully"
+        : "User unsuspended successfully",
+    });
+  } catch (error) {
+    console.error("Error suspending user:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}

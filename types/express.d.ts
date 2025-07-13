@@ -1,4 +1,5 @@
 import { User } from './user';
+import { Request } from "express";
 
 declare global {
   namespace Express {
@@ -26,4 +27,6 @@ declare global {
   }
 }
 
-export {};
+export interface AuthenticatedRequest extends Request {
+  user: Express.User;
+}

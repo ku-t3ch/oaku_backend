@@ -60,7 +60,7 @@ model Campus {
   organizationTypes OrganizationType[]
   projects          Project[]
   users             User[]
-  userRoles         UserRole[]       
+  userRoles         UserRole[]
 }
 
 model OrganizationType {
@@ -104,7 +104,7 @@ model User {
   campus            Campus             @relation(fields: [campusId], references: [id])
   activities        ActivityHour[]
   userOrganizations UserOrganization[] // ✅ สำหรับ USER roles
-  userRoles         UserRole[]         // ✅ สำหรับ ADMIN roles
+  userRoles         UserRole[] // ✅ สำหรับ ADMIN roles
   log               Log[]
 }
 
@@ -162,8 +162,8 @@ model Log {
 model UserRole {
   id        String   @id @default(uuid())
   userId    String
-  role      Role     // CAMPUS_ADMIN, SUPER_ADMIN
-  campusId  String?  // สำหรับ CAMPUS_ADMIN
+  role      Role // CAMPUS_ADMIN, SUPER_ADMIN
+  campusId  String? // สำหรับ CAMPUS_ADMIN
   createdAt DateTime @default(now())
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -173,17 +173,17 @@ model UserRole {
 }
 
 model UserOrganization {
-  id                 String   @id @default(uuid())
+  id                 String       @id @default(uuid())
   userId             String
   organizationId     String
   userIdCode         String
   organizationIdCode String
-  role               Role     @default(USER) // ✅ จะเป็น USER เสมอ
+  role               Role         @default(USER) // ✅ จะเป็น USER เสมอ
   position           Position // HEAD หรือ MEMBER
-  joinedAt           DateTime @default(now())
-
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  joinedAt           DateTime     @default(now())
+  isSuspended        Boolean      @default(false)
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([userId, organizationId]) // ป้องกันการ join org เดียวกันซ้ำ
 }

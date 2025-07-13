@@ -1,4 +1,5 @@
-import { Role, Position } from "@prisma/client"; 
+import { Role, Position } from "@prisma/client";
+import { Request } from "express";
 
 export interface UserRole {
   id: string;
@@ -10,25 +11,6 @@ export interface UserRole {
     id: string;
     name: string;
   } | null;
-}
-
-export interface User {
-  id: string;
-  userId: string;
-  name: string;
-  email: string;
-  phoneNumber?: string | null;
-  image?: string | null;
-  campusId: string;
-  campus?: {
-    id: string;
-    name: string;
-  };
-  userOrganizations: UserOrganization[];
-  userRoles?: UserRole[];
-  isSuspended: boolean;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface UserOrganization {
@@ -60,6 +42,25 @@ export interface UserOrganization {
   };
 }
 
+export interface User {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  phoneNumber?: string | null;
+  image?: string | null;
+  campusId: string;
+  campus?: {
+    id: string;
+    name: string;
+  };
+  userOrganizations: UserOrganization[];
+  userRoles: UserRole[];
+  isSuspended: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface JWTUser {
   id: string;
   userId: string;
@@ -68,6 +69,7 @@ export interface JWTUser {
   roles: Role[];
   campusId?: string;
   userOrganizations: UserOrganization[];
-  userRoles?: UserRole[];
+  userRoles: UserRole[];
   isSuspended: boolean;
 }
+

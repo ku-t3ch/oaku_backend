@@ -92,7 +92,7 @@ export const getUserById = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const user = await prisma.user.findUnique({
-      where: { id }, 
+      where: { id },
       include: {
         campus: true,
         userOrganizations: {
@@ -308,7 +308,9 @@ export const SuperAdminSuspendUser = async (req: Request, res: Response) => {
     }
 
     // เช็คว่ามี role SUPER_ADMIN หรือไม่
-    const isSuperAdmin = user.userRoles.some((role) => role.role === "SUPER_ADMIN");
+    const isSuperAdmin = user.userRoles.some(
+      (role) => role.role === "SUPER_ADMIN"
+    );
     if (isSuperAdmin) {
       return res.status(403).json({ error: "Cannot suspend SUPER_ADMIN" });
     }
@@ -327,4 +329,48 @@ export const SuperAdminSuspendUser = async (req: Request, res: Response) => {
     console.error("Error suspending user:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
-}
+};
+export const CampusAdminSuspendUser = async (req: Request, res: Response) => {
+  const { id, organizationId } = req.params;
+  let { isSuspended = true } = req.body;
+
+  if (typeof isSuspended === "string") {
+    isSuspended = isSuspended === "true";
+  }
+
+  try {
+    // หา userOrganization ที่ตรงกับ user และ organization
+    const userOrg = await prisma.userOrganization.findUnique({
+      where: {
+        userId_organizationId: {
+          userId: id,
+          organizationId: organizationId,
+        },
+      },
+    });
+
+    if (!userOrg) {
+      return res.status(404).json({ error: "UserOrganization not found" });
+    }
+
+    await prisma.userOrganization.update({
+      where: {
+        userId_organizationId: {
+          userId: id,
+          organizationId: organizationId,
+        },
+      },
+      data: { isSuspended },
+    });
+
+    res.status(200).json({
+      message: isSuspended
+        ? "User suspended in organization successfully"
+        : "User unsuspended in organization successfully",
+      userOrganization: { userId: id, organizationId, isSuspended },
+    });
+  } catch (error) {
+    console.error("Error suspending user in organization:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};

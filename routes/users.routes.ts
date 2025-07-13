@@ -7,7 +7,8 @@ import {
   AddOrRemoveCampusAdmin,
   AddSuperAdmin,
   AddUserToOrganizationTypeAndOrganization,
-  SuperAdminSuspendUser
+  SuperAdminSuspendUser,
+  CampusAdminSuspendUser,
 } from "../controllers/users.controller";
 import {
   authenticateJWT,
@@ -44,7 +45,13 @@ router.put(
   SuperAdminSuspendUser
 );
 
-
+//PUT /users/:id/organization/:organizationId/suspend
+router.put(
+  "/:id/organization/:organizationId/suspend",
+  authenticateJWT,
+  headOrAdminOnly, 
+  CampusAdminSuspendUser
+);
 
 //POST /users/:id/admin
 router.post(
@@ -64,6 +71,5 @@ router.post(
   adminOnly,
   AddUserToOrganizationTypeAndOrganization
 );
-
 
 export default router;

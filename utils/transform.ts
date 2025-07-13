@@ -19,12 +19,15 @@ export function transformUser(user: User) {
       id: uo.id,
       role: uo.role,
       position: uo.position,
+      isSuspended: uo.isSuspended,
       organization: uo.organization
+      
         ? {
             id: uo.organization.id,
             nameEn: uo.organization.nameEn,
             nameTh: uo.organization.nameTh,
             campus: uo.organization.campus
+
               ? {
                   id: uo.organization.campus.id,
                   name: uo.organization.campus.name,

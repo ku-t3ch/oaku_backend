@@ -79,7 +79,7 @@ model Organization {
   image                String
   details              String
   socialMedia          Json? //[{ "platform": "Facebook", "url": "https://facebook.com/organization" ,platform: "Instagram", "url": "https://instagram.com/organization" }]
-  email                String             @unique
+  email                String             
   phoneNumber          String?
   createdAt            DateTime           @default(now())
   campusId             String

@@ -20,6 +20,7 @@ export interface UserOrganization {
   userIdCode: string;
   organizationIdCode: string;
   role: Role;
+  isSuspended: boolean;
   position: Position;
   joinedAt: Date;
   organization: {

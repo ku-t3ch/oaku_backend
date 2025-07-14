@@ -156,8 +156,8 @@ export const getOrganizationsAndUserInOrganizationById = async (
           select: {
             id: true,
             role: true,
-            position: true,
             isSuspended: true,
+            position: true,
             user: {
               select: {
                 id: true,

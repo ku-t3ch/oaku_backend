@@ -243,7 +243,7 @@ async function main() {
       data: {
         userId: "b6610450366", // Rawipon's actual ID
         name: "รวิพล พลศรุตวานิช",
-        email: "rawipon.po@ku.th",
+        email: "surapat.pak@ku.th",
         phoneNumber: "0933244055",
         campusId: bangkokCampus.id, // Primary campus
       },

@@ -34,7 +34,7 @@ export const getUsers = async (req: Request, res: Response) => {
 export const getUsersByRoleOrCampusIdOrOrganizationTypeIdOrOrganizationId =
   async (req: Request, res: Response) => {
     const { role, campusId, organizationTypeId, organizationId } = req.query;
-    try {
+      try {
       const users = await prisma.user.findMany({
         where: {
           ...(campusId && { campusId: campusId as string }),

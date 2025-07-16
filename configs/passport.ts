@@ -95,7 +95,7 @@ passport.use(
 
 // ---------- KU ALL LOGIN STRATEGY ----------
 passport.use(
-  "kuall",
+  "kualllogin",
   new OAuth2Strategy(
     {
       authorizationURL: process.env.KUALL_AUTHORIZATION_ENDPOINT!,
@@ -153,7 +153,6 @@ passport.use(
             },
           });
         } else {
-          // สร้างผู้ใช้ใหม่ (ต้องมี campus default)
           const defaultCampus = await prisma.campus.findFirst();
           if (!defaultCampus) {
             return done(new Error("No default campus found"));

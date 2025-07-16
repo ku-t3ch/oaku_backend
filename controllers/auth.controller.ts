@@ -47,11 +47,9 @@ export const googleCallback = async (req: Request, res: Response) => {
       );
     }
 
-    // ✅ ใช้ getUserRoles แทน getUserRole
     const userRoles = getUserRoles(fullUser);
     const highestRole = getHighestRole(userRoles);
 
-    // ✅ สร้าง JWT tokens ด้วย roles array
     const accessToken = generateAccessToken({
       userId: fullUser.id,
       email: fullUser.email,

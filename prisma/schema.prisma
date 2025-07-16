@@ -7,6 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Status {
+  COMPLETED
+  IN_PROGRESS
+  PADDING
+  CANCELED
+}
+
 enum Role {
   USER
   CAMPUS_ADMIN
@@ -79,7 +86,7 @@ model Organization {
   image                String
   details              String
   socialMedia          Json? //[{ "platform": "Facebook", "url": "https://facebook.com/organization" ,platform: "Instagram", "url": "https://instagram.com/organization" }]
-  email                String             
+  email                String
   phoneNumber          String?
   createdAt            DateTime           @default(now())
   campusId             String
@@ -120,6 +127,7 @@ model Project {
   participants                Json? // [{"staff":10 }, {"student":10}]
   schedule                    Json? // [{"location": "somewhere", "eachDay":[{date:"2023-01-01",description:"description",timeline:[{timeStart:"08:00", timeEnd:"10:00",description:"description"}]}]}]
   principlesAndReasoning      String?
+  status                      Status                     @default(PADDING) // COMPLETED, IN_PROGRESS, PADDING, CANCELED
   budgetUsed                  Int?
   objectives                  String?
   activityFormat              String[]

@@ -65,13 +65,13 @@ router.get(
 
 // KU ALL LOGIN
 router.get(
-  "/kuall",
-  passport.authenticate("kuall", { scope: ["profile", "email"] })
+  "/kualllogin",
+  passport.authenticate("kualllogin", { scope: ["profile", "email"] })
 );
 
 router.get(
-  "/kuall/callback",
-  passport.authenticate("kuall", { session: false }),
+  "/kualllogin/callback",
+  passport.authenticate("kualllogin", { session: false }),
   googleCallback // ใช้ controller เดียวกับ google ได้เลย
 );
 

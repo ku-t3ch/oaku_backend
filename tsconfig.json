@@ -17,7 +17,7 @@
     "emitDecoratorMetadata": true,
     "lib": ["ES2020"],
     "typeRoots": ["./node_modules/@types", "./types"],
-    "types": ["node"]
+    "types": ["node", "multer"]
   },
   "include": [
     "**/*.ts",

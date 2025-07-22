@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import {ComplianceStandard,KasetsartStudentIdentity,SDG} from "@prisma/client";
+import { ComplianceStandard, KasetsartStudentIdentity, SDG } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -80,13 +80,12 @@ async function main() {
 
   // --- Create Organizations ---
   const organizations = await Promise.all([
-    // organizations[0] = Faculty of Agriculture (BKK)
     prisma.organization.create({
       data: {
         publicOrganizationId: "KU-AGRI-001",
         nameEn: "Faculty of Agriculture",
         nameTh: "คณะเกษตร",
-        image: "https://example.com/agri-logo.jpg",
+        image: null,
         details: "คณะเกษตรศาสตร์ เป็นคณะแรกของมหาวิทยาลัยเกษตรศาสตร์",
         socialMedia: [
           { platform: "Facebook", url: "https://facebook.com/ku.agri" },
@@ -97,13 +96,12 @@ async function main() {
         organizationTypeId: facultyTypeBKK.id,
       },
     }),
-    // organizations[1] = Faculty of Engineering (BKK)
     prisma.organization.create({
       data: {
         publicOrganizationId: "KU-ENG-002",
         nameEn: "Faculty of Engineering",
         nameTh: "คณะวิศวกรรมศาสตร์",
-        image: "https://example.com/eng-logo.jpg",
+        image: null,
         details: "คณะวิศวกรรมศาสตร์ มุ่งเน้นการพัฒนาเทคโนโลยีเพื่อเกษตรกรรม",
         socialMedia: [
           { platform: "Facebook", url: "https://facebook.com/ku.eng" },
@@ -114,13 +112,12 @@ async function main() {
         organizationTypeId: facultyTypeBKK.id,
       },
     }),
-    // organizations[2] = Faculty of Science (BKK)
     prisma.organization.create({
       data: {
         publicOrganizationId: "KU-SCI-003",
         nameEn: "Faculty of Science",
         nameTh: "คณะวิทยาศาสตร์",
-        image: "https://example.com/sci-logo.jpg",
+        image: null,
         details: "คณะวิทยาศาสตร์ ผลิตบัณฑิตด้านวิทยาศาสตร์และเทคโนโลยี",
         socialMedia: [
           { platform: "Facebook", url: "https://facebook.com/ku.sci" },
@@ -131,13 +128,12 @@ async function main() {
         organizationTypeId: facultyTypeBKK.id,
       },
     }),
-    // organizations[3] = Graduate School (BKK)
     prisma.organization.create({
       data: {
         publicOrganizationId: "KU-GRAD-004",
         nameEn: "Graduate School",
         nameTh: "บัณฑิตวิทยาลัย",
-        image: "https://example.com/grad-logo.jpg",
+        image: null,
         details: "บัณฑิตวิทยาลัย บริหารจัดการหลักสูตรระดับบัณฑิตศึกษา",
         email: "grad@ku.ac.th",
         phoneNumber: "02-579-2000",
@@ -145,13 +141,12 @@ async function main() {
         organizationTypeId: graduateSchoolTypeBKK.id,
       },
     }),
-    // organizations[4] = Office of the President (BKK)
     prisma.organization.create({
       data: {
         publicOrganizationId: "KU-OFFICE-PRES-005",
         nameEn: "Office of the President",
         nameTh: "สำนักงานอธิการบดี",
-        image: "https://example.com/office-pres-logo.jpg",
+        image: null,
         details: "บริหารจัดการและสนับสนุนการดำเนินงานของมหาวิทยาลัย",
         email: "president.office@ku.ac.th",
         phoneNumber: "02-579-0100",
@@ -159,14 +154,12 @@ async function main() {
         organizationTypeId: officeTypeBKK.id,
       },
     }),
-
-    // organizations[5] = Faculty of Agriculture at Kamphaeng Saen (KPS)
     prisma.organization.create({
       data: {
         publicOrganizationId: "KU-KPS-AGRI-006",
         nameEn: "Faculty of Agriculture at Kamphaeng Saen",
         nameTh: "คณะเกษตร กำแพงแสน",
-        image: "https://example.com/kps-agri-logo.jpg",
+        image: null,
         details: "มุ่งเน้นการวิจัยและพัฒนาการเกษตรในพื้นที่",
         email: "kps.agri@ku.ac.th",
         phoneNumber: "034-351-800",
@@ -174,13 +167,12 @@ async function main() {
         organizationTypeId: facultyTypeKPS.id,
       },
     }),
-    // organizations[6] = Kamphaeng Saen Campus Office (KPS)
     prisma.organization.create({
       data: {
         publicOrganizationId: "KU-KPS-OFFICE-007",
         nameEn: "Kamphaeng Saen Campus Office",
         nameTh: "สำนักงานวิทยาเขตกำแพงแสน",
-        image: "https://example.com/kps-office-logo.jpg",
+        image: null,
         details: "บริหารจัดการงานทั่วไปของวิทยาเขตกำแพงแสน",
         email: "kps.office@ku.ac.th",
         phoneNumber: "034-351-700",
@@ -188,14 +180,12 @@ async function main() {
         organizationTypeId: officeTypeKPS.id,
       },
     }),
-
-    // organizations[7] = Faculty of Natural Resources and Agro-Industry (SNK)
     prisma.organization.create({
       data: {
         publicOrganizationId: "KU-SNK-AGRI-008",
         nameEn: "Faculty of Natural Resources and Agro-Industry",
         nameTh: "คณะทรัพยากรธรรมชาติและอุตสาหกรรมเกษตร",
-        image: "https://example.com/snk-agri-logo.jpg",
+        image: null,
         details: "พัฒนาทรัพยากรธรรมชาติและอุตสาหกรรมเกษตรในภาคอีสาน",
         email: "snk.agri@ku.ac.th",
         phoneNumber: "042-725-000",
@@ -203,13 +193,12 @@ async function main() {
         organizationTypeId: facultyTypeSNK.id,
       },
     }),
-    // organizations[8] = Chalermphrakiat Sakon Nakhon Campus Office (SNK)
     prisma.organization.create({
       data: {
         publicOrganizationId: "KU-SNK-OFFICE-009",
         nameEn: "Chalermphrakiat Sakon Nakhon Campus Office",
         nameTh: "สำนักงานวิทยาเขตเฉลิมพระเกียรติ จังหวัดสกลนคร",
-        image: "https://example.com/snk-office-logo.jpg",
+        image: null,
         details: "บริหารจัดการงานทั่วไปของวิทยาเขตสกลนคร",
         email: "snk.office@ku.ac.th",
         phoneNumber: "042-725-200",
@@ -217,14 +206,12 @@ async function main() {
         organizationTypeId: officeTypeSNK.id,
       },
     }),
-
-    // organizations[9] = Faculty of Science at Sriracha (SR)
     prisma.organization.create({
       data: {
         publicOrganizationId: "KU-SR-SCI-010",
         nameEn: "Faculty of Science at Sriracha",
         nameTh: "คณะวิทยาศาสตร์ ศรีราชา",
-        image: "https://example.com/sr-sci-logo.jpg",
+        image: null,
         details: "เน้นวิทยาศาสตร์และเทคโนโลยีสำหรับอุตสาหกรรม",
         email: "sr.sci@ku.ac.th",
         phoneNumber: "038-354-580",
@@ -243,7 +230,7 @@ async function main() {
       data: {
         userId: "b6610450366", // Rawipon's actual ID
         name: "รวิพล พลศรุตวานิช",
-        email: "surapat.pak@ku.th",
+        email: "rawipon.po@ku.th",
         phoneNumber: "0933244055",
         campusId: bangkokCampus.id, // Primary campus
       },

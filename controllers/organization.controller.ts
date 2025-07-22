@@ -1,5 +1,6 @@
 import { prisma } from "../configs/db";
 import { Request, Response } from "express";
+import { uploadImageOrganizationAndReturnUrl } from "./file.controller";
 
 export const getOrganizations = async (req: Request, res: Response) => {
   const { campusId, organizationTypeId } = req.query;
@@ -7,8 +8,7 @@ export const getOrganizations = async (req: Request, res: Response) => {
   try {
     const where: any = {};
     if (campusId) where.campusId = campusId as string;
-    if (organizationTypeId)
-      where.organizationTypeId = organizationTypeId as string;
+    if (organizationTypeId) where.organizationTypeId = organizationTypeId as string;
 
     const organizations = await prisma.organization.findMany({
       where,
@@ -24,7 +24,10 @@ export const getOrganizations = async (req: Request, res: Response) => {
   }
 };
 
-export const editOrganization = async (req: Request, res: Response) => {
+export const editOrganization = async (
+  req: Request & { file?: Express.Multer.File },
+  res: Response
+) => {
   const { id } = req.params;
   const {
     nameEn,
@@ -34,16 +37,28 @@ export const editOrganization = async (req: Request, res: Response) => {
     publicOrganizationId,
     email,
     phoneNumber,
-    image,
     details,
     socialMedia,
   } = req.body;
 
   try {
-    // ตรวจสอบว่ามี organization นี้อยู่จริง
+
     const org = await prisma.organization.findUnique({ where: { id } });
     if (!org) {
       return res.status(404).json({ error: "Organization not found" });
+    }
+
+
+    let imageToUpdate = org.image;
+    if (req.file) {
+      const key = `organization/${id}/$${req.file.originalname}`;
+      imageToUpdate = await uploadImageOrganizationAndReturnUrl(
+        key,
+        req.file.buffer,
+        req.file.mimetype
+      );
+    } else if (typeof req.body.image === "string") {
+      imageToUpdate = req.body.image.trim() === "" ? org.image : req.body.image;
     }
 
     // อัปเดตข้อมูล
@@ -57,7 +72,7 @@ export const editOrganization = async (req: Request, res: Response) => {
         publicOrganizationId: publicOrganizationId ?? org.publicOrganizationId,
         email: email ?? org.email,
         phoneNumber: phoneNumber ?? org.phoneNumber,
-        image: image ?? org.image,
+        image: imageToUpdate,
         details: details ?? org.details,
         socialMedia: socialMedia ?? org.socialMedia,
       },
@@ -78,8 +93,7 @@ export const editOrganization = async (req: Request, res: Response) => {
 };
 
 export const createOrganization = async (req: Request, res: Response) => {
-  const { nameEn, nameTh, campusId, organizationTypeId, publicOrganizationId } =
-    req.body;
+  const { nameEn, nameTh, campusId, organizationTypeId, publicOrganizationId } = req.body;
 
   if (
     !nameEn ||
@@ -89,8 +103,7 @@ export const createOrganization = async (req: Request, res: Response) => {
     !publicOrganizationId
   ) {
     return res.status(400).json({
-      error:
-        "nameEn, nameTh, campusId, organizationTypeId, publicOrganizationId are required",
+      error: "nameEn, nameTh, campusId, organizationTypeId, publicOrganizationId are required",
     });
   }
 
@@ -105,11 +118,9 @@ export const createOrganization = async (req: Request, res: Response) => {
       },
     });
     if (existing) {
-      return res
-        .status(409)
-        .json({
-          error: "Organization name or publicOrganizationId already exists",
-        });
+      return res.status(409).json({
+        error: "Organization name or publicOrganizationId already exists",
+      });
     }
 
     const newOrganization = await prisma.organization.create({
@@ -131,9 +142,7 @@ export const createOrganization = async (req: Request, res: Response) => {
     res.status(201).json(newOrganization);
   } catch (error: any) {
     if (error.code === "P2002") {
-      return res
-        .status(409)
-        .json({ error: "Duplicate organization or publicOrganizationId" });
+      return res.status(409).json({ error: "Duplicate organization or publicOrganizationId" });
     }
     console.error("Error creating organization:", error);
     res.status(500).json({ error: "Internal Server Error" });

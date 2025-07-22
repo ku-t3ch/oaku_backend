@@ -83,7 +83,7 @@ model Organization {
   publicOrganizationId String             @unique //AdminCampus input for organization creation
   nameEn               String
   nameTh               String
-  image                String
+  image                String?
   details              String
   socialMedia          Json? //[{ "platform": "Facebook", "url": "https://facebook.com/organization" ,platform: "Instagram", "url": "https://instagram.com/organization" }]
   email                String

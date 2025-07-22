@@ -7,5 +7,5 @@ export const s3 = new S3Client({
     accessKeyId: process.env.S3_ACCESS!,
     secretAccessKey: process.env.S3_SECRET!,
   },
-  forcePathStyle: true, // สำหรับ S3 ที่ไม่ใช่ AWS
+  forcePathStyle: true, 
 });

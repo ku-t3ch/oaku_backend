@@ -12,6 +12,11 @@ export const uploadActivityHour = async (
       return res.status(400).json({ message: "No file uploaded" });
     }
 
+    const { projectId, userId } = req.body; 
+    if (!projectId || !userId) {
+      return res.status(400).json({ message: "projectId และ userId ต้องไม่เป็นค่าว่าง" });
+    }
+
     const file = req.file;
     const key = `activity-hours/${file.originalname}`;
     const url = await uploadFileActivityHoursAndReturnUrl(
@@ -20,7 +25,17 @@ export const uploadActivityHour = async (
       file.mimetype
     );
 
-    return res.status(200).json({ url });
+
+    const activityHour = await prisma.activityHour.create({
+      data: {
+        fileNamePrinciple: file.originalname,
+        projectId,
+        userId,
+        isCompleted: false,
+      },
+    });
+
+    return res.status(200).json({ url, activityHour });
   } catch (error) {
     return res.status(400).json({ message: (error as Error).message });
   }

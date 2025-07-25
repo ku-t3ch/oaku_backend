@@ -68,12 +68,15 @@ export const createProject = async (req: Request, res: Response) => {
       status,
       budgetUsed,
       objectives,
-      activityFormat,
+      activityFormt,
       expectedProjectOutcome,
       location,
       organizationId,
       campusId,
       activityHours,
+      complianceStandards,
+      kasetsartStudentIdentities,
+      sustainableDevelopmentGoals,
     } = req.body;
 
     const project = await prisma.project.create({
@@ -86,6 +89,9 @@ export const createProject = async (req: Request, res: Response) => {
         targetUser,
         participants,
         schedule,
+        complianceStandards,
+        kasetsartStudentIdentities,
+        sustainableDevelopmentGoals,
         principlesAndReasoning,
         status,
         budgetUsed,

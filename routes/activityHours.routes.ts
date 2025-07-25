@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { uploadActivityHour,getActivityHourFile } from "../controllers/activityHours.controller";
+import multer from "multer";
+import { uploadActivityHour, getActivityHourFile } from "../controllers/activityHours.controller";
 import {
   authenticateJWT,
   adminOnly,
@@ -7,9 +8,17 @@ import {
   headOrAdminOnly,
   ALLROLE,
 } from "../middlewares/auth.middleware";
-const router = Router();
 
-router.post("/upload", authenticateJWT, ALLROLE, uploadActivityHour);
+const router = Router();
+const upload = multer(); 
+
+router.post(
+  "/upload",
+  authenticateJWT,
+  ALLROLE,
+  upload.single("file"), 
+  uploadActivityHour
+);
 
 router.get(
   "/file/:filename",

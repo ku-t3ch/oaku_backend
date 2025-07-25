@@ -7,14 +7,15 @@ export const yearValidate = ["1", "2", "3", "4", "5", "6", "7", "8"];
 
 export const requiredCsvHeader = [
   "วิทยาเขต",
-  "รหัสนิสิต",
+  "รหัสนิสิต (ไม่ซ้ำ)",
   "คำนำหน้า",
-  "ชื่อ-นามสกุล",
-  "คณะ",
-  "สาขา",
+  'ชื่อ-นามสกุล (ไม่มีคำนำหน้า) (กรอก "-" ได้)',
+  'คณะ  (ไม่มี "คณะ" นำหน้า)',
+  'สาขา (กรอก "-" ได้)',
   "ชั้นปี",
   "ตำแหน่ง",
-  "หมายเหตุ",
+  "หมายเหตุ (ไม่บังคับ)",
+  "จำนวนรหัสนิสิต (สำหรับตรวจสอบ)",
 ];
 
 export const nameValidator = (name: string) => {
@@ -49,12 +50,21 @@ export const prefixValidator = (prefix: string) => {
 };
 
 export const campusValidator = (campus: string) => {
-  if (!campusValidate.includes(campus)) {
-    throw new Error(`วิทยาเขตต้องเป็น ${campusValidate.join(", ")}`);
+  if (!campus || campusValidate.includes(campus)) {
+    // อนุญาตให้ค่าว่างผ่าน หรือเป็น BK, KPS, SRC, CSC, SLA
+    return;
   }
+  throw new Error(`วิทยาเขตต้องเป็น ${campusValidate.join(", ")} หรือเว้นว่าง`);
 };
 
-export const studentCodeValidator = (studentCode: string) => {
+export const studentCodeValidator = (
+  studentCode: string,
+  position?: string
+) => {
+  // อนุญาตให้ค่าว่าง ถ้าตำแหน่งเป็น G
+  if (position === "G" && (!studentCode || studentCode.trim() === "")) {
+    return;
+  }
   if (studentCode.length !== 10) {
     throw new Error(`รหัสนิสิตต้องมี 10 หลัก`);
   }
@@ -65,10 +75,14 @@ export const studentCodeValidator = (studentCode: string) => {
 
 export const studentCodeDuplicateValidator = (
   studentCode: string,
-  studentCodeAll: (string | undefined)[]
+  studentCodeAll: (string | undefined)[],
+  position?: string
 ) => {
-  const result = studentCodeAll.filter((code) => code === studentCode);
-  if (result.length > 1) {
+  if (position === "G") return; // ไม่ตรวจสอบซ้ำสำหรับ G
+  if (
+    studentCode &&
+    studentCodeAll.filter((code) => code === studentCode).length > 1
+  ) {
     throw new Error(`รหัสนิสิตซ้ำ: ${studentCode}`);
   }
 };
@@ -85,7 +99,11 @@ export const majorValidator = (major: string) => {
   }
 };
 
-export const yearValidator = (year: string) => {
+export const yearValidator = (year: string, position?: string) => {
+  // อนุญาตให้ค่าว่าง ถ้าตำแหน่งเป็น G
+  if (position === "G" && (!year || year.trim() === "")) {
+    return;
+  }
   if (!yearValidate.includes(year)) {
     throw new Error(`ต้องเป็นชั้นปี ${yearValidate.join(", ")} เท่านั้น`);
   }
@@ -126,28 +144,16 @@ export const csvExecute = async (fileData: any) => {
       const position = row[7];
 
       if (positionValidate.includes(position ?? "")) {
-        if (position === "G") {
-          if (campus && campus.length > 0) campusValidator(campus);
-          if (studentCode && studentCode.length > 0)
-            studentCodeValidator(studentCode);
-          if (prefix && prefix.length > 0) prefixValidator(prefix);
-          if (name && name.length > 0) nameValidator(name);
-          if (faculty && faculty.length > 0) facultyValidator(faculty);
-          if (major && major.length > 0) majorValidator(major);
-          if (year && year.length > 0) yearValidator(year);
-        } else {
-          campusValidator(campus!);
-          studentCodeValidator(studentCode!);
-
-          const allStudentCode = records.slice(1).map((row) => row[1]);
-          studentCodeDuplicateValidator(studentCode!, allStudentCode);
-          prefixValidator(prefix!);
-          nameValidator(name!);
-          facultyValidator(faculty!);
-          majorValidator(major!);
-          yearValidator(year!);
-          positionValidator(position!);
-        }
+        campusValidator(campus!);
+        studentCodeValidator(studentCode!, position!); 
+        const allStudentCode = records.slice(1).map((row) => row[1]);
+        studentCodeDuplicateValidator(studentCode!, allStudentCode, position!);
+        prefixValidator(prefix!);
+        nameValidator(name!);
+        facultyValidator(faculty!);
+        majorValidator(major!);
+        yearValidator(year!, position!);
+        positionValidator(position!);
       } else {
         throw new Error(`Invalid position: ${position}`);
       }
@@ -174,11 +180,11 @@ export const csvExecute = async (fileData: any) => {
     newColumn,
     ...records.slice(1).map((record1) => {
       return [
-        record1[0],
+        record1[0], // วิทยาเขต
         "", // รหัสโครงการ
         "", // ชื่อโครงการ
         "", // ชื่อองค์กร
-        record1[1], // รหัสนิสิต
+        record1[1], // รหัสนิสิต (ไม่ซ้ำ)
         record1[2], // คำนำหน้า
         record1[3], // ชื่อ-นามสกุล
         record1[4], // คณะ

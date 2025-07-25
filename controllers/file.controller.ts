@@ -1,6 +1,7 @@
 import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3 } from "../utils/s3";
+import { csvExecute } from "../utils/validation";
 
 export async function getS3SignedUrl(key: string, expiresInSeconds = 3600) {
   const command = new GetObjectCommand({
@@ -30,6 +31,15 @@ export async function uploadFileActivityHoursAndReturnUrl(
   body: Buffer | string,
   contentType?: string
 ) {
+
+  if (contentType === "text/csv" || key.endsWith(".csv")) {
+    try {
+      await csvExecute(body); 
+    } catch (err) {
+      throw new Error(`CSV format invalid: ${(err as Error).message}`);
+    }
+  }
+
   const command = new PutObjectCommand({
     Bucket: process.env.S3_BUCKET,
     Key: key,

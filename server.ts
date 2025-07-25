@@ -9,6 +9,7 @@ import campusRoutes from "./routes/campus.routes";
 import organizationRoutes from "./routes/organization.routes";
 import organizationTypeRoutes from "./routes/organizationType.routes";
 import projectRoutes from "./routes/projects.routes";
+import activityHoursRoutes from "./routes/activityHours.routes";
 import { swaggerUiServe, swaggerUiSetup } from "./swagger";
 
 import dotenv from "dotenv";
@@ -43,7 +44,9 @@ app.use("/campus", campusRoutes);
 app.use("/organizations", organizationRoutes);
 app.use("/organization-types", organizationTypeRoutes);
 app.use("/projects", projectRoutes);
+app.use("/activity-hours", activityHoursRoutes);
 app.use("/api-docs", swaggerUiServe, swaggerUiSetup);
+
 
 // 404 handler
 app.use("*", (req, res) => {

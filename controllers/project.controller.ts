@@ -52,3 +52,56 @@ export const getProjects = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const createProject = async (req: Request, res: Response) => {
+  try {
+    const {
+      activityCode,
+      nameEn,
+      nameTh,
+      dateStart,
+      dateEnd,
+      targetUser,
+      participants,
+      schedule,
+      principlesAndReasoning,
+      status,
+      budgetUsed,
+      objectives,
+      activityFormat,
+      expectedProjectOutcome,
+      location,
+      organizationId,
+      campusId,
+      activityHours,
+    } = req.body;
+
+    const project = await prisma.project.create({
+      data: {
+        activityCode,
+        nameEn,
+        nameTh,
+        dateStart: new Date(dateStart),
+        dateEnd: new Date(dateEnd),
+        targetUser,
+        participants,
+        schedule,
+        principlesAndReasoning,
+        status,
+        budgetUsed,
+        objectives,
+        activityFormat,
+        expectedProjectOutcome,
+        location,
+        organizationId,
+        campusId,
+        activityHours,
+      },
+    });
+
+    return res.status(201).json(project);
+  } catch (error) {
+    console.error("Error creating project:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};

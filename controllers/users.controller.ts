@@ -34,7 +34,7 @@ export const getUsers = async (req: Request, res: Response) => {
 export const getUsersByRoleOrCampusIdOrOrganizationTypeIdOrOrganizationId =
   async (req: Request, res: Response) => {
     const { role, campusId, organizationTypeId, organizationId } = req.query;
-      try {
+    try {
       const users = await prisma.user.findMany({
         where: {
           ...(campusId && { campusId: campusId as string }),
@@ -244,12 +244,9 @@ export const AddUserToOrganizationTypeAndOrganization = async (
   res: Response
 ) => {
   const { id } = req.params;
-  const {
-    organizationTypeId,
-    organizationId,
-    role = "USER",
-    position = "MEMBER",
-  } = req.body;
+  const { organizationId, role = "USER", position } = req.body;
+
+  const validPosition = position === "HEAD" ? "HEAD" : "MEMBER";
 
   try {
     const user = await prisma.user.findUnique({
@@ -279,8 +276,8 @@ export const AddUserToOrganizationTypeAndOrganization = async (
         organizationId,
         userIdCode: user.userId,
         organizationIdCode: organizationId,
-        role, // default "USER"
-        position, // default "MEMBER"
+        role,
+        position: validPosition,
       },
     });
 

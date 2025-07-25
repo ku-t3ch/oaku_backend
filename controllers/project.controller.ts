@@ -68,7 +68,7 @@ export const createProject = async (req: Request, res: Response) => {
       status,
       budgetUsed,
       objectives,
-      activityFormt,
+      activityFormat,
       expectedProjectOutcome,
       location,
       organizationId,

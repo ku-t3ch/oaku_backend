@@ -7,7 +7,7 @@ async function main() {
   console.log("Starting seed...");
 
   // Clear existing data first (ลำดับสำคัญ!)
-  await prisma.activityHour.deleteMany();
+  await prisma.activityHourFile.deleteMany();
   await prisma.log.deleteMany();
   await prisma.project.deleteMany();
   await prisma.userOrganization.deleteMany();
@@ -529,7 +529,6 @@ async function main() {
 
   // --- Create Sample Projects ---
   const projects = await Promise.all([
-    // projects[0]
     prisma.project.create({
       data: {
         publicProjectId: "PROJ-2024-001",
@@ -597,12 +596,17 @@ async function main() {
         kasetsartStudentIdentities: [KasetsartStudentIdentity.KNOWLEDGE_CREATION],
         sustainableDevelopmentGoals: [SDG.SDG2, SDG.SDG4],
         activityHours: {
-          totalHours: 40,
-          categories: [{ category: "บรรยาย", hours: 20 }, { category: "ปฏิบัติการ", hours: 20 }],
+          university_activities: 12,
+          social_activities: 8,
+          competency_development_activities: {
+            virtue: 4,
+            thinking_and_learning: 3,
+            interpersonal_relationships_and_communication: 2,
+            health: 5,
+          },
         },
       },
     }),
-    // projects[1]
     prisma.project.create({
       data: {
         publicProjectId: "PROJ-2024-002",
@@ -647,8 +651,14 @@ async function main() {
         kasetsartStudentIdentities: [KasetsartStudentIdentity.UNITY],
         sustainableDevelopmentGoals: [SDG.SDG9],
         activityHours: {
-          totalHours: 60,
-          categories: [{ category: "บรรยาย", hours: 30 }, { category: "เวิร์คช็อป", hours: 30 }],
+          university_activities: 10,
+          social_activities: 6,
+          competency_development_activities: {
+            virtue: 2,
+            thinking_and_learning: 4,
+            interpersonal_relationships_and_communication: 3,
+            health: 3,
+          },
         },
       },
     }),
@@ -658,7 +668,7 @@ async function main() {
 
   // --- Create Activity Hours ---
   const activityHours = await Promise.all([
-    prisma.activityHour.create({
+    prisma.activityHourFile.create({
       data: {
         isCompleted: true,
         fileNamePrinciple: "activity-report-PROJ-2024-001-USER_BKK_HEAD_ONLY.pdf",
@@ -666,7 +676,7 @@ async function main() {
         userId: users[4].id, // USER_BKK_HEAD_ONLY
       },
     }),
-    prisma.activityHour.create({
+    prisma.activityHourFile.create({
       data: {
         isCompleted: false,
         fileNamePrinciple: "activity-report-PROJ-2024-002-USER_BKK_MEMBER_ONLY.pdf",
@@ -674,7 +684,7 @@ async function main() {
         userId: users[5].id, // USER_BKK_MEMBER_ONLY
       },
     }),
-    prisma.activityHour.create({
+    prisma.activityHourFile.create({
       data: {
         isCompleted: true,
         fileNamePrinciple: "activity-report-PROJ-2024-001-USER_MULTI_ORG.pdf",
@@ -714,7 +724,7 @@ async function main() {
   const totalUserRoles = await prisma.userRole.count();
   const totalUserOrganizations = await prisma.userOrganization.count();
   const totalProjects = await prisma.project.count();
-  const totalActivityHours = await prisma.activityHour.count();
+  const totalActivityHours = await prisma.activityHourFile.count();
   const totalLogs = await prisma.log.count();
 
   console.log("🎉 Comprehensive Seed completed successfully!");

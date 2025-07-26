@@ -7,6 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 enum Status {
   COMPLETED
   IN_PROGRESS
@@ -109,7 +110,7 @@ model User {
   isSuspended       Boolean            @default(false)
   campusId          String
   campus            Campus             @relation(fields: [campusId], references: [id])
-  activities        ActivityHour[]
+  activityHoursFile     ActivityHourFile[]
   userOrganizations UserOrganization[] // ✅ สำหรับ USER roles
   userRoles         UserRole[] // ✅ สำหรับ ADMIN roles
   log               Log[]
@@ -139,14 +140,14 @@ model Project {
   campusId                    String
   organization                Organization               @relation(fields: [organizationId], references: [id])
   campus                      Campus                     @relation(fields: [campusId], references: [id])
-  activities                  ActivityHour[]
+  activityHourFiles           ActivityHourFile[]
   complianceStandards         ComplianceStandard[]
   kasetsartStudentIdentities  KasetsartStudentIdentity[]
-  sustainableDevelopmentGoals SDG[]
+  sustainableDevelopmentGoals SDG[] 
   activityHours               Json?
 }
 
-model ActivityHour {
+model ActivityHourFile {
   id                String   @id @default(uuid())
   isCompleted       Boolean  @default(false)
   fileNamePrinciple String?

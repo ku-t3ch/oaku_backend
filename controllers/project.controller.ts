@@ -1,9 +1,8 @@
 import { prisma } from "../configs/db";
-import { uploadFileActivityHoursAndReturnUrl } from "./file.controller"; 
+import { uploadFileActivityHoursAndReturnUrl } from "./file.controller";
 import { Request, Response } from "express";
 
 export const getProjects = async (req: Request, res: Response) => {
-
   const { campusId, organizationTypeId, organizationId } = req.query;
 
   try {
@@ -160,11 +159,13 @@ export const createProject = async (req: Request, res: Response) => {
   }
 };
 
-
-export const uploadFileActivityHourInProject = async (req: Request, res: Response) => {
+export const uploadFileActivityHourInProject = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const { projectId } = req.params;
-    const { userId } = req.body; 
+    const { userId } = req.body;
     const file = req.file;
 
     if (!file) {
@@ -191,9 +192,38 @@ export const uploadFileActivityHourInProject = async (req: Request, res: Respons
       },
     });
 
+    const project = await prisma.project.update({
+      where: { id: projectId },
+      data: { status: "IN_PROGRESS" },
+    });
+
     return res.status(201).json(activityHourFile);
   } catch (error) {
     console.error("Error uploading file for activity hours:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
-}
+};
+
+export const completeActivityHourInProject = async (
+  req: Request,
+  res: Response
+) => {
+  const { projectId } = req.params;
+
+  try {
+    const activityHour = await prisma.activityHourFile.update({
+      where: { id: projectId },
+      data: { isCompleted: true },
+    });
+
+    const project = await prisma.project.update({
+      where: { id: projectId },
+      data: { status: "COMPLETED" },
+    });
+
+    return res.status(200).json(activityHour);
+  } catch (error) {
+    console.error("Error completing activity hour:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};

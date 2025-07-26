@@ -26,7 +26,7 @@ export const uploadActivityHour = async (
     );
 
 
-    const activityHour = await prisma.activityHour.create({
+    const activityHour = await prisma.activityHourFile.create({
       data: {
         fileNamePrinciple: file.originalname,
         projectId,

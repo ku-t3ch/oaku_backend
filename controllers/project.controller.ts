@@ -2,6 +2,7 @@ import { prisma } from "../configs/db";
 import { uploadFileActivityHoursAndReturnUrl } from "./file.controller";
 import { Request, Response } from "express";
 
+
 export const getProjects = async (req: Request, res: Response) => {
   const { campusId, organizationTypeId, organizationId } = req.query;
 
@@ -86,6 +87,8 @@ export const getProjectById = async (req: Request, res: Response) => {
             name: true,
           },
         },
+       activityHourFiles: true, 
+        
       },
     });
 
@@ -185,19 +188,26 @@ export const uploadFileActivityHourInProject = async (
     // สร้าง record ใหม่ใน ActivityHourFile
     const activityHourFile = await prisma.activityHourFile.create({
       data: {
-        fileNamePrinciple: fileUrl,
+        fileNamePrinciple: file.originalname,
+        fileUrl: fileUrl, // เพิ่มบรรทัดนี้
         projectId,
         userId,
         isCompleted: false,
       },
     });
 
+    // อัปเดตสถานะ Project
     const project = await prisma.project.update({
       where: { id: projectId },
       data: { status: "IN_PROGRESS" },
+      include: {
+        activityHourFiles: true, // ถ้า schema มี relation นี้
+      },
     });
 
-    return res.status(201).json(activityHourFile);
+    
+
+    return res.status(201).json({ activityHourFile, project });
   } catch (error) {
     console.error("Error uploading file for activity hours:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -208,20 +218,22 @@ export const completeActivityHourInProject = async (
   req: Request,
   res: Response
 ) => {
-  const { projectId } = req.params;
+  const { activityHourFileId, projectId } = req.params;
 
   try {
+    // อัปเดต activity hour file
     const activityHour = await prisma.activityHourFile.update({
-      where: { id: projectId },
+      where: { id: activityHourFileId },
       data: { isCompleted: true },
     });
 
+    // อัปเดตสถานะ Project
     const project = await prisma.project.update({
       where: { id: projectId },
       data: { status: "COMPLETED" },
     });
 
-    return res.status(200).json(activityHour);
+    return res.status(200).json({ activityHour, project });
   } catch (error) {
     console.error("Error completing activity hour:", error);
     return res.status(500).json({ message: "Internal server error" });

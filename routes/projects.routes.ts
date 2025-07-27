@@ -1,26 +1,31 @@
 import { Router } from "express";
 import multer from "multer";
-import { getProjects, getProjectById, createProject, uploadFileActivityHourInProject } from "../controllers/project.controller";
-import { authenticateJWT, ALLROLE  } from "../middlewares/auth.middleware";
+import {
+  getProjects,
+  getProjectById,
+  createProject,
+  uploadFileActivityHourInProject,
+} from "../controllers/project.controller";
+import { authenticateJWT, ALLROLE } from "../middlewares/auth.middleware";
 
 const router = Router();
-const upload = multer(); // เพิ่ม multer
+const upload = multer(); // ใช้ multer สำหรับรับไฟล์
 
-//GET /projects Body: {campusId: string, organizationTypeId: string, organizationId: string}
+// GET /projects
 router.get("/", authenticateJWT, ALLROLE, getProjects);
 
-//GET /projects/:id
+// GET /projects/:id
 router.get("/:id", authenticateJWT, ALLROLE, getProjectById);
 
-//POST /projects 
+// POST /projects
 router.post("/", authenticateJWT, ALLROLE, createProject);
 
-// POST /projects/:projectId/activity-hour-file (for file upload)
+// POST /projects/:projectId/activity-hour-file (อัปโหลดไฟล์ activity hour)
 router.post(
   "/:projectId/activity-hour-file",
   authenticateJWT,
   ALLROLE,
-  upload.single("file"), // เพิ่ม middleware สำหรับรับไฟล์
+  upload.single("file"),
   uploadFileActivityHourInProject
 );
 

@@ -1,7 +1,6 @@
 import { prisma } from "../configs/db";
-import { uploadFileActivityHoursAndReturnUrl } from "./file.controller";
+import { uploadFileActivityHoursAndReturnUrl,uploadPdfDocAndReturnUrl} from "./file.controller";
 import { Request, Response } from "express";
-
 
 export const getProjects = async (req: Request, res: Response) => {
   const { campusId, organizationTypeId, organizationId } = req.query;
@@ -87,8 +86,7 @@ export const getProjectById = async (req: Request, res: Response) => {
             name: true,
           },
         },
-       activityHourFiles: true, 
-        
+        activityHourFiles: true,
       },
     });
 
@@ -162,6 +160,35 @@ export const createProject = async (req: Request, res: Response) => {
   }
 };
 
+export const uploadDocPdfInProject = async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: "File is required" });
+    }
+
+    // Upload PDF to S3 and get URL
+    const fileUrl = await uploadPdfDocAndReturnUrl(
+      `project-docs/${projectId}/${file.originalname}`,
+      file.buffer,
+      file.mimetype
+    );
+
+    // อัปเดต Project ให้เก็บ documentFiles (หรือเพิ่ม logic ตาม schema)
+    const project = await prisma.project.update({
+      where: { id: projectId },
+      data: { documentFiles: fileUrl },
+    });
+
+    return res.status(201).json({ fileUrl, project });
+  } catch (error) {
+    console.error("Error uploading PDF document:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 export const uploadFileActivityHourInProject = async (
   req: Request,
   res: Response
@@ -204,8 +231,6 @@ export const uploadFileActivityHourInProject = async (
         activityHourFiles: true, // ถ้า schema มี relation นี้
       },
     });
-
-    
 
     return res.status(201).json({ activityHourFile, project });
   } catch (error) {

@@ -26,6 +26,23 @@ export async function uploadImageOrganizationAndReturnUrl(
   return getS3SignedUrl(key);
 }
 
+export async function uploadPdfDocAndReturnUrl(
+  key: string,
+  body: Buffer | string,
+  contentType?: string
+) {
+  const command = new PutObjectCommand({
+    Bucket: process.env.S3_BUCKET,
+    Key: key,
+    Body: body,
+    ContentType: contentType,
+  });
+  await s3.send(command);
+  return getS3SignedUrl(key);
+}
+
+
+
 export async function uploadFileActivityHoursAndReturnUrl(
   key: string,
   body: Buffer | string,

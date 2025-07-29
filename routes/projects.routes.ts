@@ -5,6 +5,7 @@ import {
   getProjectById,
   createProject,
   uploadFileActivityHourInProject,
+  completeActivityHourInProject
 } from "../controllers/project.controller";
 import { authenticateJWT, ALLROLE } from "../middlewares/auth.middleware";
 
@@ -29,4 +30,11 @@ router.post(
   uploadFileActivityHourInProject
 );
 
+// PATCH /projects/:projectId/activity-hour-file/:activityHourFileId/complete (อัปเดตสถานะไฟล์ activity hour เป็น completed)
+router.patch(
+  "/:projectId/activity-hour-file/:activityHourFileId/complete",
+  authenticateJWT,
+  ALLROLE,
+  completeActivityHourInProject
+);
 export default router;

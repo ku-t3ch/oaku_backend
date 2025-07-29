@@ -123,8 +123,8 @@ model Project {
   nameTh                      String
   dateStart                   DateTime
   dateEnd                     DateTime
-  targetUser                  Json // [{"staff":20 }, {"student":50}]
-  participants                Json? // [{"staff":10 }, {"student":10}]
+  targetUser                  Int?
+  participants                Int?
   schedule                    Json? // [{"location": "somewhere", "eachDay":[{date:"2023-01-01",description:"description",timeline:[{timeStart:"08:00", timeEnd:"10:00",description:"description"}]}]}]
   principlesAndReasoning      String?
   status                      Status                     @default(PADDING) // COMPLETED, IN_PROGRESS, PADDING, CANCELED
@@ -140,6 +140,7 @@ model Project {
   organization                Organization               @relation(fields: [organizationId], references: [id])
   campus                      Campus                     @relation(fields: [campusId], references: [id])
   activityHourFiles           ActivityHourFile[]
+  documentFiles               String?
   complianceStandards         ComplianceStandard[]
   kasetsartStudentIdentities  KasetsartStudentIdentity[]
   sustainableDevelopmentGoals SDG[]

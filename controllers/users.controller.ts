@@ -30,10 +30,10 @@ export const getUsers = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 export const getUsersByRoleOrCampusIdOrOrganizationTypeIdOrOrganizationId =
   async (req: Request, res: Response) => {
-    const { role, campusId, organizationTypeId, organizationId } = req.query;
+    const { role, campusId, organizationTypeId, organizationId, position } =
+      req.query;
     try {
       const users = await prisma.user.findMany({
         where: {
@@ -56,9 +56,23 @@ export const getUsersByRoleOrCampusIdOrOrganizationTypeIdOrOrganizationId =
             userOrganizations: {
               some: {
                 organizationId: organizationId as string,
+                // เพิ่ม filter by position เฉพาะเมื่อมี position และ role เป็น MEMBER
+                ...(role === "MEMBER" && position
+                  ? { position: position as any }
+                  : {}),
               },
             },
           }),
+          // กรณี filter เฉพาะ position โดยไม่มี organizationId (เช่นกรณีต้องการหา MEMBER ทุก org)
+          ...(role === "MEMBER" &&
+            position &&
+            !organizationId && {
+              userOrganizations: {
+                some: {
+                  position: position as any,
+                },
+              },
+            }),
         },
         include: {
           campus: true,
@@ -86,7 +100,6 @@ export const getUsersByRoleOrCampusIdOrOrganizationTypeIdOrOrganizationId =
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
-
 export const getUserById = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {

@@ -158,7 +158,9 @@ export const getOrganizationsAndUserInOrganizationById = async (
   try {
     const organization = await prisma.organization.findUnique({
       where: { id },
+  
       include: {
+
         campus: true,
         organizationType: true,
         userOrganizations: {
@@ -167,6 +169,7 @@ export const getOrganizationsAndUserInOrganizationById = async (
             role: true,
             isSuspended: true,
             position: true,
+            organization: true,
             user: {
               select: {
                 id: true,

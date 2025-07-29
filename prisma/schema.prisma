@@ -187,7 +187,7 @@ model UserOrganization {
   userId             String
   organizationId     String
   userIdCode         String
-  organizationIdCode String
+  publicOrganizationId String
   role               Role         @default(USER) // ✅ จะเป็น USER เสมอ
   position           Position // HEAD หรือ MEMBER
   joinedAt           DateTime     @default(now())

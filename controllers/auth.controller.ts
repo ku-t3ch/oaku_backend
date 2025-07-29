@@ -80,7 +80,7 @@ export const googleCallback = async (req: Request, res: Response) => {
         userId: uo.userId,
         organizationId: uo.organizationId,
         userIdCode: uo.userIdCode,
-        organizationIdCode: uo.organizationIdCode,
+        publicOrganizationId: uo.publicOrganizationId,
         role: uo.role,
         position: uo.position,
         joinedAt: uo.joinedAt,

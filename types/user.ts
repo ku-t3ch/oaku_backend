@@ -18,7 +18,7 @@ export interface UserOrganization {
   userId: string;
   organizationId: string;
   userIdCode: string;
-  organizationIdCode: string;
+  publicOrganizationId: string;
   role: Role;
   isSuspended: boolean;
   position: Position;

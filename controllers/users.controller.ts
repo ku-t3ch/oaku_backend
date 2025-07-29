@@ -275,7 +275,7 @@ export const AddUserToOrganizationTypeAndOrganization = async (
         userId: user.id,
         organizationId,
         userIdCode: user.userId,
-        organizationIdCode: organizationId,
+        publicOrganizationId: organizationId,
         role,
         position: validPosition,
       },

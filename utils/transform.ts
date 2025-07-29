@@ -17,6 +17,7 @@ export function transformUser(user: User) {
     })),
     userOrganizations: user.userOrganizations?.map((uo: any) => ({
       id: uo.id,
+      publicOrganizationId: uo.publicOrganizationId,
       role: uo.role,
       position: uo.position,
       isSuspended: uo.isSuspended,

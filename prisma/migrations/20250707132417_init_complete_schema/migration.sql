@@ -135,7 +135,7 @@ CREATE TABLE "UserOrganization" (
     "userId" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
     "userIdCode" TEXT NOT NULL,
-    "organizationIdCode" TEXT NOT NULL,
+    "publicOrganizationId" TEXT NOT NULL,
     "role" "Role" NOT NULL DEFAULT 'USER',
     "position" "Position" NOT NULL,
     "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

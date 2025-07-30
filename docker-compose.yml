@@ -30,24 +30,24 @@ services:
     container_name: oaku_backend
     environment:
       - NODE_ENV=development
-      - PORT=3001
+      - PORT=4001
       - DATABASE_URL=postgresql://oaku_user:oaku_password@postgres:5432/oaku_postgres
-      - FRONTEND_URL=http://localhost:3000
+      - FRONTEND_URL=http://localhost:4000
       - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-make-it-very-long-and-random
       - JWT_REFRESH_SECRET=your-refresh-secret-key-also-change-this-in-production-make-it-different-from-jwt-secret
       - JWT_EXPIRES_IN=7d
       - JWT_REFRESH_EXPIRES_IN=30d
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_CALLBACK_URL=http://localhost:3001/auth/google/callback
+      - GOOGLE_CALLBACK_URL=http://localhost:4001/auth/google/callback
     ports:
-      - "3001:3001"
+      - "4001:4001"
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:4001/health"]
       interval: 30s
       timeout: 10s
       retries: 5

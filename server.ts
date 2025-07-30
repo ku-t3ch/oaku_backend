@@ -10,6 +10,7 @@ import organizationRoutes from "./routes/organization.routes";
 import organizationTypeRoutes from "./routes/organizationType.routes";
 import projectRoutes from "./routes/projects.routes";
 import activityHoursRoutes from "./routes/activityHours.routes";
+import kuclubRoutes from "./routes/kuclub.routes";
 import { swaggerUiServe, swaggerUiSetup } from "./swagger";
 
 import dotenv from "dotenv";
@@ -17,7 +18,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3001;
+const PORT = Number(process.env.PORT) ;
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
 // Middleware
@@ -46,6 +47,7 @@ app.use("/organization-types", organizationTypeRoutes);
 app.use("/projects", projectRoutes);
 app.use("/activity-hours", activityHoursRoutes);
 app.use("/api-docs", swaggerUiServe, swaggerUiSetup);
+app.use("/kuclub", kuclubRoutes);
 
 
 // 404 handler

@@ -32,48 +32,89 @@ export const getUsers = async (req: Request, res: Response) => {
 };
 export const getUsersByRoleOrCampusIdOrOrganizationTypeIdOrOrganizationId =
   async (req: Request, res: Response) => {
-    const { role, campusId, organizationTypeId, organizationId, position } =
-      req.query;
+    const { role, campusId, organizationTypeId, organizationId, position } = req.query;
+
     try {
+      // Base where clause
+      let whereClause: any = {};
+
+      // Campus filter - applies to all users regardless of role
+      if (campusId) {
+        whereClause.campusId = campusId as string;
+      }
+
+      // Role-based filtering
+      if (role === "SUPER_ADMIN" || role === "CAMPUS_ADMIN") {
+        // For admin roles, filter by userRoles
+        whereClause.userRoles = {
+          some: { role: role as string }
+        };
+      } else if (role === "USER") {
+        // For organization users, we need users who have userOrganizations
+        // but we'll apply additional filters below
+        whereClause.userOrganizations = {
+          some: {
+            role: "USER", // In userOrganizations, the role is "USER"
+          }
+        };
+      }
+
+      // Additional filters for userOrganizations (applies when filtering by org-related fields)
+      // These can apply even without specifying role=ORGANIZATION_USER
+      const orgFilters: any = {};
+      
+      if (position) {
+        orgFilters.position = position as string;
+      }
+      
+      if (organizationTypeId) {
+        orgFilters.organization = {
+          organizationTypeId: organizationTypeId as string
+        };
+      }
+      
+      if (organizationId) {
+        orgFilters.organizationId = organizationId as string;
+      }
+
+      // If we have org-related filters, we need to apply them
+      if (Object.keys(orgFilters).length > 0) {
+        if (whereClause.userOrganizations) {
+          // If we already have userOrganizations filter (from role=ORGANIZATION_USER)
+          // merge the additional filters
+          whereClause.userOrganizations.some = {
+            ...whereClause.userOrganizations.some,
+            ...orgFilters
+          };
+        } else {
+          // If we don't have userOrganizations filter yet, create it
+          // This handles cases where we filter by org fields without specifying role
+          whereClause.userOrganizations = {
+            some: {
+              role: "USER", // Still need to specify role in userOrganizations
+              ...orgFilters
+            }
+          };
+        }
+      }
+
+      // Handle campus filter for userOrganizations when needed
+      if (campusId && whereClause.userOrganizations) {
+        // If we're filtering userOrganizations and campus, 
+        // we need to ensure the organization belongs to the specified campus
+        if (whereClause.userOrganizations.some.organization) {
+          whereClause.userOrganizations.some.organization.campusId = campusId as string;
+        } else {
+          whereClause.userOrganizations.some.organization = {
+            campusId: campusId as string
+          };
+        }
+      }
+
+      console.log('Filter WHERE clause:', JSON.stringify(whereClause, null, 2));
+
       const users = await prisma.user.findMany({
-        where: {
-          ...(campusId && { campusId: campusId as string }),
-          ...(role && {
-            userRoles: {
-              some: { role: role as any },
-            },
-          }),
-          ...(organizationTypeId && {
-            userOrganizations: {
-              some: {
-                organization: {
-                  organizationTypeId: organizationTypeId as string,
-                },
-              },
-            },
-          }),
-          ...(organizationId && {
-            userOrganizations: {
-              some: {
-                organizationId: organizationId as string,
-                // เพิ่ม filter by position เฉพาะเมื่อมี position และ role เป็น MEMBER
-                ...(role === "MEMBER" && position
-                  ? { position: position as any }
-                  : {}),
-              },
-            },
-          }),
-          // กรณี filter เฉพาะ position โดยไม่มี organizationId (เช่นกรณีต้องการหา MEMBER ทุก org)
-          ...(role === "MEMBER" &&
-            position &&
-            !organizationId && {
-              userOrganizations: {
-                some: {
-                  position: position as any,
-                },
-              },
-            }),
-        },
+        where: whereClause,
         include: {
           campus: true,
           userOrganizations: {

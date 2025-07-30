@@ -2,7 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import {
   uploadActivityHour,
-  getActivityHourFile,
+  // getActivityHourFile,
   downloadActivityHourFile,
   deleteActivityHourFile,
 } from "../controllers/activityHours.controller";
@@ -41,11 +41,11 @@ router.delete(
 );
 
 // ดูไฟล์ activity hour (เฉพาะหัวหน้าหรือแอดมิน)
-router.get(
-  "/file/:filename",
-  authenticateJWT,
-  headOrAdminOnly,
-  getActivityHourFile
-);
+// router.get(
+//   "/file/:filename",
+//   authenticateJWT,
+//   headOrAdminOnly,
+//   getActivityHourFile
+// );
 
 export default router;

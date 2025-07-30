@@ -1,5 +1,5 @@
 import { prisma } from "../configs/db";
-import { uploadFileActivityHoursAndReturnUrl,uploadPdfDocAndReturnUrl} from "./file.controller";
+import { uploadPdfDocAndReturnUrl, deletePdfDoc } from "./file.controller";
 import { Request, Response } from "express";
 
 export const getProjects = async (req: Request, res: Response) => {
@@ -189,53 +189,23 @@ export const uploadDocPdfInProject = async (req: Request, res: Response) => {
   }
 };
 
-export const uploadFileActivityHourInProject = async (
-  req: Request,
-  res: Response
-) => {
+export const deleteDocPdfInProject = async (req: Request, res: Response) => {
   try {
-    const { projectId } = req.params;
-    const { userId } = req.body;
-    const file = req.file;
+    const key = req.query.key as string;
+    const projectId = req.params.projectId;
+    if (!key) return res.status(400).json({ message: "key is required" });
 
-    if (!file) {
-      return res.status(400).json({ message: "File is required" });
-    }
-    if (!userId) {
-      return res.status(400).json({ message: "userId is required" });
-    }
+    // ลบไฟล์ใน S3
+    const result = await deletePdfDoc(key);
 
-    // Upload file to S3 and get URL
-    const fileUrl = await uploadFileActivityHoursAndReturnUrl(
-      `activity-hours/${projectId}/${file.originalname}`,
-      file.buffer,
-      file.mimetype
-    );
-
-    // สร้าง record ใหม่ใน ActivityHourFile
-    const activityHourFile = await prisma.activityHourFile.create({
-      data: {
-        fileNamePrinciple: file.originalname,
-        fileUrl: fileUrl, // เพิ่มบรรทัดนี้
-        projectId,
-        userId,
-        isCompleted: false,
-      },
-    });
-
-    // อัปเดตสถานะ Project
     const project = await prisma.project.update({
       where: { id: projectId },
-      data: { status: "IN_PROGRESS" },
-      include: {
-        activityHourFiles: true, // ถ้า schema มี relation นี้
-      },
+      data: { documentFiles: null },
     });
 
-    return res.status(201).json({ activityHourFile, project });
+    return res.status(200).json({ ...result, project });
   } catch (error) {
-    console.error("Error uploading file for activity hours:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(400).json({ message: (error as Error).message });
   }
 };
 
@@ -264,3 +234,53 @@ export const completeActivityHourInProject = async (
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// export const uploadFileActivityHourInProject = async (
+//   req: Request,
+//   res: Response
+// ) => {
+//   try {
+//     const { projectId } = req.params;
+//     const { userId } = req.body;
+//     const file = req.file;
+
+//     if (!file) {
+//       return res.status(400).json({ message: "File is required" });
+//     }
+//     if (!userId) {
+//       return res.status(400).json({ message: "userId is required" });
+//     }
+
+//     // Upload file to S3 and get URL
+//     const fileUrl = await uploadFileActivityHoursAndReturnUrl(
+//       `activity-hours/${projectId}/${file.originalname}`,
+//       file.buffer,
+//       file.mimetype
+//     );
+
+//     // สร้าง record ใหม่ใน ActivityHourFile
+//     const activityHourFile = await prisma.activityHourFile.create({
+//       data: {
+//         fileNamePrinciple: file.originalname,
+//         fileUrl: fileUrl, // เพิ่มบรรทัดนี้
+//         projectId,
+//         userId,
+//         isCompleted: false,
+//       },
+//     });
+
+//     // อัปเดตสถานะ Project
+//     const project = await prisma.project.update({
+//       where: { id: projectId },
+//       data: { status: "IN_PROGRESS" },
+//       include: {
+//         activityHourFiles: true, // ถ้า schema มี relation นี้
+//       },
+//     });
+
+//     return res.status(201).json({ activityHourFile, project });
+//   } catch (error) {
+//     console.error("Error uploading file for activity hours:", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };

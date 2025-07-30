@@ -429,6 +429,7 @@ async function main() {
     prisma.project.create({
       data: {
         publicProjectId: "PROJ-2024-001",
+
         activityCode: "AGR-2024-001",
         nameEn: "Sustainable Agriculture Development Project",
         nameTh: "โครงการพัฒนาการเกษตรแบบยั่งยืน",
@@ -486,6 +487,8 @@ async function main() {
             },
           ],
         }),
+
+        documentFiles: null,
         organizationId: organizations[0].id,
         campusId: bangkokCampus.id,
         complianceStandards: [ComplianceStandard.KNOWLEDGE, ComplianceStandard.SKILLS],

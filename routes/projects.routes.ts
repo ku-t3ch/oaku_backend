@@ -4,9 +4,9 @@ import {
   getProjects,
   getProjectById,
   createProject,
-  uploadFileActivityHourInProject,
   completeActivityHourInProject,
   uploadDocPdfInProject,
+  deleteDocPdfInProject,
 } from "../controllers/project.controller";
 import { authenticateJWT, ALLROLE } from "../middlewares/auth.middleware";
 
@@ -22,15 +22,6 @@ router.get("/:id", authenticateJWT, ALLROLE, getProjectById);
 // POST /projects
 router.post("/", authenticateJWT, ALLROLE, createProject);
 
-// POST /projects/:projectId/activity-hour-file (อัปโหลดไฟล์ activity hour)
-router.post(
-  "/:projectId/activity-hour-file",
-  authenticateJWT,
-  ALLROLE,
-  upload.single("file"),
-  uploadFileActivityHourInProject
-);
-
 // POST /projects/:projectId/document-file (อัปโหลดไฟล์ PDF เอกสารโครงการ)
 router.post(
   "/:projectId/document-file",
@@ -38,6 +29,13 @@ router.post(
   ALLROLE,
   upload.single("file"),
   uploadDocPdfInProject
+);
+// DELETE /projects/:projectId/pdf-file
+router.delete(
+  "/:projectId/document-file",
+  authenticateJWT,
+  ALLROLE,
+  deleteDocPdfInProject
 );
 
 // PATCH /projects/:projectId/activity-hour-file/:activityHourFileId/complete (อัปเดตสถานะไฟล์ activity hour เป็น completed)
@@ -47,4 +45,13 @@ router.patch(
   ALLROLE,
   completeActivityHourInProject
 );
+// POST /projects/:projectId/activity-hour-file (อัปโหลดไฟล์ activity hour)
+// router.post(
+//   "/:projectId/activity-hour-file",
+//   authenticateJWT,
+//   ALLROLE,
+//   upload.single("file"),
+//   uploadFileActivityHourInProject
+// );
+
 export default router;

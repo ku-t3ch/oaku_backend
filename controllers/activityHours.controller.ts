@@ -3,10 +3,10 @@ import { Request, Response } from "express";
 import {
   uploadFileActivityHoursAndReturnUrl,
   getFromS3,
+  deleteFileActivityHours
 } from "./file.controller";
 import { Readable } from "stream";
-import { DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { s3 } from "../utils/s3";
+
 
 export const uploadActivityHour = async (
   req: Request & { file?: Express.Multer.File },
@@ -54,31 +54,6 @@ export const uploadActivityHour = async (
   }
 };
 
-export const getActivityHourFile = async (req: Request, res: Response) => {
-  try {
-    const { filename } = req.params;
-    const key = `activity-hours/${filename}`;
-    const fileStream = await getFromS3(key);
-
-    if (!fileStream) {
-      return res.status(404).json({ message: "File not found" });
-    }
-
-    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-    const stream = (fileStream as any).Body ?? fileStream;
-    if (stream && typeof stream.pipe === "function") {
-      stream.pipe(res);
-    } else {
-      try {
-        Readable.from(stream as any).pipe(res);
-      } catch {
-        return res.status(500).json({ message: "Cannot stream file" });
-      }
-    }
-  } catch (error) {
-    return res.status(400).json({ message: (error as Error).message });
-  }
-};
 
 export const deleteActivityHourFile = async (req: Request, res: Response) => {
   try {
@@ -93,19 +68,9 @@ export const deleteActivityHourFile = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "ActivityHourFile not found" });
     }
 
-    // Delete from S3
+    // Delete from S3 using helper
     const key = `activity-hours/${activityHourFile.projectId}/${activityHourFile.fileNamePrinciple}`;
-    try {
-      await s3.send(
-        new DeleteObjectCommand({
-          Bucket: process.env.S3_BUCKET,
-          Key: key,
-        })
-      );
-    } catch (err) {
-      // Ignore S3 error, file may already be deleted
-      console.warn("File not found in S3 or already deleted:", key);
-    }
+    await deleteFileActivityHours(key);
 
     // Delete from DB
     await prisma.activityHourFile.delete({
@@ -158,3 +123,29 @@ export const downloadActivityHourFile = async (req: Request, res: Response) => {
     return res.status(500).json({ message: (error as Error).message });
   }
 };
+
+// export const getActivityHourFile = async (req: Request, res: Response) => {
+//   try {
+//     const { filename } = req.params;
+//     const key = `activity-hours/${filename}`;
+//     const fileStream = await getFromS3(key);
+
+//     if (!fileStream) {
+//       return res.status(404).json({ message: "File not found" });
+//     }
+
+//     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+//     const stream = (fileStream as any).Body ?? fileStream;
+//     if (stream && typeof stream.pipe === "function") {
+//       stream.pipe(res);
+//     } else {
+//       try {
+//         Readable.from(stream as any).pipe(res);
+//       } catch {
+//         return res.status(500).json({ message: "Cannot stream file" });
+//       }
+//     }
+//   } catch (error) {
+//     return res.status(400).json({ message: (error as Error).message });
+//   }
+// };

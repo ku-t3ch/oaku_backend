@@ -428,13 +428,13 @@ async function main() {
   const projects = await Promise.all([
     prisma.project.create({
       data: {
-        publicProjectId: "PROJ-2024-001",
+        publicProjectId: "PROJ-2025-001",
 
-        activityCode: "AGR-2024-001",
+        activityCode: "AGR-2025-001",
         nameEn: "Sustainable Agriculture Development Project",
         nameTh: "โครงการพัฒนาการเกษตรแบบยั่งยืน",
-        dateStart: new Date("2024-01-01"),
-        dateEnd: new Date("2024-12-31"),
+        dateStart: new Date("2025-01-01"),
+        dateEnd: new Date("2025-12-31"),
         targetUser: 120,
         participants: 100,
         schedule: JSON.stringify([
@@ -442,7 +442,7 @@ async function main() {
             location: "ห้องประชุม 101 คณะเกษตร",
             eachDay: [
               {
-                date: "2024-01-15",
+                date: "2025-01-15",
                 description: "เปิดโครงการและการปฐมนิเทศ",
                 timeline: [
                   {
@@ -453,7 +453,7 @@ async function main() {
                 ],
               },
               {
-                date: "2024-03-10",
+                date: "2025-03-10",
                 description: "เวิร์คช็อปการปลูกพืชไร้ดิน",
                 timeline: [
                   {
@@ -508,12 +508,12 @@ async function main() {
     }),
     prisma.project.create({
       data: {
-        publicProjectId: "PROJ-2024-002",
-        activityCode: "ENG-2024-001",
+        publicProjectId: "PROJ-2025-002",
+        activityCode: "ENG-2025-001",
         nameEn: "AI for Smart Farming Innovation",
         nameTh: "นวัตกรรม AI เพื่อการเกษตรอัจฉริยะ",
-        dateStart: new Date("2024-03-01"),
-        dateEnd: new Date("2024-09-30"),
+        dateStart: new Date("2025-03-01"),
+        dateEnd: new Date("2025-09-30"),
         targetUser: 60,
         participants: 53,
         schedule: [
@@ -521,7 +521,7 @@ async function main() {
             location: "ห้องปฏิบัติการคอมพิวเตอร์ คณะวิศวกรรมศาสตร์",
             eachDay: [
               {
-                date: "2024-04-05",
+                date: "2025-04-05",
                 description: "แนะนำ AI และ Machine Learning",
                 timeline: [
                   {
@@ -566,7 +566,7 @@ async function main() {
   await prisma.activityHourFile.create({
     data: {
       isCompleted: true,
-      fileNamePrinciple: "activity-report-PROJ-2024-001-USER_BKK_HEAD_ONLY.pdf",
+      fileNamePrinciple: "activity-report-PROJ-2025-001-USER_BKK_HEAD_ONLY.pdf",
       projectId: projects[0].id,
       userId: users[4].id,
       fileUrl: "",
@@ -575,7 +575,7 @@ async function main() {
   await prisma.activityHourFile.create({
     data: {
       isCompleted: false,
-      fileNamePrinciple: "activity-report-PROJ-2024-002-USER_BKK_MEMBER_ONLY.pdf",
+      fileNamePrinciple: "activity-report-PROJ-2025-002-USER_BKK_MEMBER_ONLY.pdf",
       projectId: projects[1].id,
       userId: users[5].id,
     },
@@ -583,7 +583,7 @@ async function main() {
   await prisma.activityHourFile.create({
     data: {
       isCompleted: true,
-      fileNamePrinciple: "activity-report-PROJ-2024-001-USER_MULTI_ORG.pdf",
+      fileNamePrinciple: "activity-report-PROJ-2025-001-USER_MULTI_ORG.pdf",
       projectId: projects[0].id,
       userId: users[6].id,
     },
@@ -600,7 +600,7 @@ async function main() {
   await prisma.log.create({
     data: {
       action: "PROJECT_CREATED",
-      message: "โครงการ PROJ-2024-001 ถูกสร้างโดย USER_BKK_HEAD_ONLY",
+      message: "โครงการ PROJ-2025-001 ถูกสร้างโดย USER_BKK_HEAD_ONLY",
       userId: users[4].id,
     },
   });

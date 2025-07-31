@@ -85,6 +85,7 @@ export const getAllProjects = async (req: Request, res: Response) => {
         activityFormat: true,
         activityHours: true,
         expectedProjectOutcome: true,
+        objectives: true,
         campus: {
           select: {
             id: true,

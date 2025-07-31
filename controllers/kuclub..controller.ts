@@ -101,6 +101,7 @@ export const getAllProjects = async (req: Request, res: Response) => {
         },
       },
     });
+    res.status(200).json(projects);
   } catch (error) {
     console.error("Error fetching projects:", error);
     res.status(500).json({ error: "Internal Server Error" });

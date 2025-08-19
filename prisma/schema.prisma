@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Status {
+  COMPLETED
+  IN_PROGRESS
+  PADDING
+  CANCELED
+}
+
+enum Role {
+  USER
+  CAMPUS_ADMIN
+  SUPER_ADMIN
+}
+
+enum Position {
+  HEAD
+  MEMBER
+  NON_POSITION
+}
+
+enum ComplianceStandard {
+  KNOWLEDGE
+  SKILLS
+  ETHICS
+  PERSONAL_CHARACTERISTICS
+}
+
+enum KasetsartStudentIdentity {
+  INTEGRITY
+  DETERMINATION
+  KNOWLEDGE_CREATION
+  UNITY
+}
+
+enum SDG {
+  SDG1
+  SDG2
+  SDG3
+  SDG4
+  SDG5
+  SDG6
+  SDG7
+  SDG8
+  SDG9
+  SDG10
+  SDG11
+  SDG12
+  SDG13
+  SDG14
+  SDG15
+  SDG16
+  SDG17
+}
+
+model Campus {
+  id                String             @id @default(uuid())
+  name              String
+  organizations     Organization[]
+  organizationTypes OrganizationType[]
+  projects          Project[]
+  users             User[]
+  userRoles         UserRole[]
+}
+
+model OrganizationType {
+  id            String         @id @default(uuid())
+  name          String
+  campusId      String
+  campus        Campus         @relation(fields: [campusId], references: [id])
+  organizations Organization[]
+}
+
+model Organization {
+  id                   String             @id @default(uuid())
+  publicOrganizationId String             @unique //AdminCampus input for organization creation
+  nameEn               String
+  nameTh               String
+  image                String?
+  details              String
+  socialMedia          Json? //[{ "platform": "Facebook", "url": "https://facebook.com/organization" ,platform: "Instagram", "url": "https://instagram.com/organization" }]
+  email                String
+  phoneNumber          String?
+  createdAt            DateTime           @default(now())
+  campusId             String
+  organizationTypeId   String
+  campus               Campus             @relation(fields: [campusId], references: [id])
+  organizationType     OrganizationType   @relation(fields: [organizationTypeId], references: [id])
+  userOrganizations    UserOrganization[] // เปลี่ยนจาก users
+  projects             Project[]
+}
+
+model User {
+  id                String             @id @default(uuid())
+  userId            String             @unique
+  name              String
+  email             String             @unique
+  phoneNumber       String?
+  image             String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  isSuspended       Boolean            @default(false)
+  campusId          String
+  campus            Campus             @relation(fields: [campusId], references: [id])
+  activityHoursFile ActivityHourFile[]
+  userOrganizations UserOrganization[] // ✅ สำหรับ USER roles
+  userRoles         UserRole[] // ✅ สำหรับ ADMIN roles
+  log               Log[]
+}
+
+model Project {
+  id                          String                     @id @default(uuid())
+  publicProjectId             String                     @unique @default(uuid())
+  activityCode                String                     @unique
+  nameEn                      String
+  nameTh                      String
+  dateStart                   DateTime
+  dateEnd                     DateTime
+  targetUser                  Int?
+  participants                Int?
+  schedule                    Json? // [{"location": "somewhere", "eachDay":[{date:"2023-01-01",description:"description",timeline:[{timeStart:"08:00", timeEnd:"10:00",description:"description"}]}]}]
+  principlesAndReasoning      String?
+  status                      Status                     @default(PADDING) // COMPLETED, IN_PROGRESS, PADDING, CANCELED
+  budgetUsed                  Int?
+  objectives                  String?
+  activityFormat              String[]
+  expectedProjectOutcome      String[]
+  createdAt                   DateTime                   @default(now())
+  updatedAt                   DateTime                   @updatedAt
+  location                    Json? //{"location":somewhere,outside:[] or outside:[{postcode:"12345", address:"somewhere",city:"Bangkok", province:"Bangkok"}]}
+  organizationId              String
+  campusId                    String
+  organization                Organization               @relation(fields: [organizationId], references: [id])
+  campus                      Campus                     @relation(fields: [campusId], references: [id])
+  activityHourFiles           ActivityHourFile[]
+  documentFiles               String?
+  complianceStandards         ComplianceStandard[]
+  kasetsartStudentIdentities  KasetsartStudentIdentity[]
+  sustainableDevelopmentGoals SDG[]
+  activityHours               Json?
+}
+
+model ActivityHourFile {
+  id                String   @id @default(uuid())
+  isCompleted       Boolean  @default(false)
+  fileNamePrinciple String?
+  fileUrl           String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  projectId         String
+  userId            String
+  project           Project  @relation(fields: [projectId], references: [id])
+  user              User     @relation(fields: [userId], references: [id])
+}
+
+model Log {
+  id        String   @id @default(uuid())
+  action    String
+  message   String?
+  userId    String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String
+  role      Role // CAMPUS_ADMIN, SUPER_ADMIN
+  campusId  String? // สำหรับ CAMPUS_ADMIN
+  createdAt DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campus Campus? @relation(fields: [campusId], references: [id])
+
+  @@unique([userId, role, campusId]) // ป้องกันการมี role เดียวกันซ้ำ
+}
+
+model UserOrganization {
+  id                 String       @id @default(uuid())
+  userId             String
+  organizationId     String
+  userIdCode         String
+  publicOrganizationId String
+  role               Role         @default(USER) // ✅ จะเป็น USER เสมอ
+  position           Position // HEAD หรือ MEMBER
+  joinedAt           DateTime     @default(now())
+  isSuspended        Boolean      @default(false)
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId]) // ป้องกันการ join org เดียวกันซ้ำ
+}

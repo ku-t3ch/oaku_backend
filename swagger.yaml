@@ -1,0 +1,300 @@
+openapi: 3.0.0
+info:
+  title: OAKU Backend API
+  version: 1.0.0
+  description: API documentation for OAKU backend
+servers:
+  - url: http://localhost:3001
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []
+paths:
+  /users:
+    get:
+      summary: Get all users (super admin only)
+      tags: [User]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: List of users
+  /users/filter:
+    get:
+      summary: Filter users
+      tags: [User]
+      parameters:
+        - in: query
+          name: role
+          schema:
+            type: string
+        - in: query
+          name: campusId
+          schema:
+            type: string
+        - in: query
+          name: organizationTypeId
+          schema:
+            type: string
+        - in: query
+          name: organizationId
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: List of filtered users
+  /users/{id}:
+    get:
+      summary: Get user by ID
+      tags: [User]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: User detail
+    put:
+      summary: Edit user info
+      tags: [User]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                phoneNumber:
+                  type: string
+                image:
+                  type: string
+      responses:
+        200:
+          description: User updated
+  /users/{id}/admin:
+    post:
+      summary: Add or remove campus admin role
+      tags: [User]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                campusId:
+                  type: string
+              required:
+                - role
+                - campusId
+      responses:
+        200:
+          description: Role removed
+        201:
+          description: Role added
+  /users/{id}/superadmin:
+    post:
+      summary: Add super admin role
+      tags: [User]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        201:
+          description: Super admin added
+  /users/{id}/organization:
+    post:
+      summary: Add user to organization
+      tags: [User]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                organizationTypeId:
+                  type: string
+                organizationId:
+                  type: string
+                role:
+                  type: string
+                position:
+                  type: string
+              required:
+                - organizationTypeId
+                - organizationId
+      responses:
+        201:
+          description: User added to organization
+  /organizations:
+    get:
+      summary: Get organizations
+      tags: [Organization]
+      parameters:
+        - in: query
+          name: campusId
+          schema:
+            type: string
+        - in: query
+          name: organizationTypeId
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: List of organizations
+    post:
+      summary: Create organization
+      tags: [Organization]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nameEn:
+                  type: string
+                nameTh:
+                  type: string
+                campusId:
+                  type: string
+                organizationTypeId:
+                  type: string
+                publicOrganizationId:
+                  type: string
+                image:
+                  type: string
+                details:
+                  type: string
+                email:
+                  type: string
+                phoneNumber:
+                  type: string
+                socialMedia:
+                  type: array
+                  items:
+                    type: object
+              required:
+                - nameEn
+                - nameTh
+                - campusId
+                - organizationTypeId
+                - publicOrganizationId
+                - image
+                - details
+                - email
+      responses:
+        201:
+          description: Organization created
+  /organizations/{id}:
+    put:
+      summary: Edit organization
+      tags: [Organization]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nameEn:
+                  type: string
+                nameTh:
+                  type: string
+                campusId:
+                  type: string
+                organizationTypeId:
+                  type: string
+                publicOrganizationId:
+                  type: string
+                image:
+                  type: string
+                details:
+                  type: string
+                email:
+                  type: string
+                phoneNumber:
+                  type: string
+                socialMedia:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        200:
+          description: Organization updated
+  /organization-types:
+    get:
+      summary: Get all organization types
+      tags: [OrganizationType]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: List of organization types
+  /campus:
+    get:
+      summary: Get all campuses
+      tags: [Campus]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: List of campuses

@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    container_name: oaku_postgres
+    environment:
+      POSTGRES_DB: oaku_postgres
+      POSTGRES_USER: oaku_user
+      POSTGRES_PASSWORD: oaku_password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "7777:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oaku_user -d oaku_postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - oaku_network
+
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: oaku_backend
+    environment:
+      - NODE_ENV=development
+      - PORT=4001
+      - DATABASE_URL=postgresql://oaku_user:oaku_password@postgres:5432/oaku_postgres
+      - FRONTEND_URL=http://localhost:4000
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-make-it-very-long-and-random
+      - JWT_REFRESH_SECRET=your-refresh-secret-key-also-change-this-in-production-make-it-different-from-jwt-secret
+      - JWT_EXPIRES_IN=7d
+      - JWT_REFRESH_EXPIRES_IN=30d
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_CALLBACK_URL=http://localhost:4001/auth/google/callback
+    ports:
+      - "4001:4001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    networks:
+      - oaku_network
+
+
+networks:
+  oaku_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

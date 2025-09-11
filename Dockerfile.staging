@@ -8,21 +8,22 @@ WORKDIR /app
 # Install required system packages
 RUN apk add --no-cache openssl bash
 
+RUN npm install -g npm@11
+
 # Copy package files first (leverage Docker cache)
 COPY package*.json ./
 
-# Install ALL deps (including devDeps for build + Prisma CLI)
-RUN npm ci
-
 # Copy source code
 COPY . .
+
+# Install ALL deps (including devDeps for build + Prisma CLI)
+RUN npm ci 
 
 # Generate Prisma client
 RUN npx prisma generate
 
 # Build TypeScript -> dist/
 RUN npm run build
-
 
 # ------------------------
 # 2. Production Stage
@@ -37,13 +38,13 @@ RUN apk add --no-cache curl bash
 # Copy package files first
 COPY package*.json ./
 
-# Install ONLY production deps
-RUN npm ci --omit=dev
-
 # Copy built app & Prisma client from builder stage
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/prisma ./prisma
+
+# Install ONLY production deps
+RUN npm ci --omit=dev
 
 # Ensure non-root user
 RUN addgroup -g 1001 -S nodejs \

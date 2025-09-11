@@ -1,63 +1,46 @@
-# ------------------------
-# 1. Builder Stage
-# ------------------------
-FROM node:20-alpine AS builder
+# Use Node.js LTS version
+FROM node:20-alpine
 
+# Install curl and bash for healthcheck
+RUN apk add --no-cache curl bash
+
+# Set working directory
 WORKDIR /app
-
-# Install required system packages
-RUN apk add --no-cache openssl bash
 
 RUN npm install -g npm@11
 
-# Copy package files first (leverage Docker cache)
+# Copy package files first (for better caching)
 COPY package*.json ./
 
 # Copy source code
 COPY . .
 
-# Install ALL deps (including devDeps for build + Prisma CLI)
-RUN npm ci 
+# Install ALL dependencies (including devDependencies for build)
+RUN npm ci
 
 # Generate Prisma client
 RUN npx prisma generate
 
-# Build TypeScript -> dist/
+# Build TypeScript
 RUN npm run build
 
-# ------------------------
-# 2. Production Stage
-# ------------------------
-FROM node:20-alpine AS production
+# Remove devDependencies after build to reduce image size
+RUN npm prune --production
 
-WORKDIR /app
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nodejs -u 1001
 
-# Install required system packages
-RUN apk add --no-cache curl bash
-
-# Copy package files first
-COPY package*.json ./
-
-# Copy built app & Prisma client from builder stage
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/prisma ./prisma
-
-# Install ONLY production deps
-RUN npm ci --omit=dev
-
-# Ensure non-root user
-RUN addgroup -g 1001 -S nodejs \
-    && adduser -S nodejs -u 1001 \
-    && chown -R nodejs:nodejs /app
-
+# Change ownership of the app directory
+RUN chown -R nodejs:nodejs /app
 USER nodejs
 
+# Expose port
 EXPOSE 4001
 
-# Healthcheck endpoint
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:4001/health || exit 1
 
-# Run app
-CMD ["node", "dist/server.js"]
+# Start command
+CMD ["npm", "start"]

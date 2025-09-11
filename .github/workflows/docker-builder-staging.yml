@@ -1,0 +1,19 @@
+name: Build Docker Image
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build the Docker image
+        run: docker build -f Dockerfile.staging -t ${{ secrets.DOCKER_USERNAME }}/oaku-backend:demo .
+      - name: Push the Docker image
+        run: |
+          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/oaku-backend:demo

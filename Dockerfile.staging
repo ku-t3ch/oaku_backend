@@ -31,6 +31,9 @@ RUN npm prune --production
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nodejs -u 1001
 
+RUN mkdir /home/nodejs/.npm
+RUN chown -R nodejs:nodejs /home/nodejs/.npm
+
 # Change ownership of the app directory
 RUN chown -R nodejs:nodejs /app
 USER nodejs

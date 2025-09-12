@@ -32,7 +32,7 @@ router.get(
 );
 
 // GET /users/:id
-router.get("/:id", authenticateJWT, headOrAdminOnly, getUserById);
+router.get("/:id", authenticateJWT, ALLROLE, getUserById);
 
 // PUT /users/:id
 router.put("/:id", authenticateJWT, headOrAdminOnly, editInfoUser);

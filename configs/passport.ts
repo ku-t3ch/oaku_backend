@@ -266,7 +266,7 @@ passport.use(
                       ].filter(
                         (item): item is Exclude<typeof item, undefined> =>
                           item !== undefined
-                      ),
+                      ) as any, // <-- add as any to satisfy TS
                     },
                   ],
                 },
@@ -304,7 +304,10 @@ passport.use(
                                 },
                               }
                             : undefined,
-                        ].filter(Boolean),
+                        ].filter(
+                          (item): item is Exclude<typeof item, undefined> =>
+                            item !== undefined
+                        ) as any, // <-- add as any to satisfy TS
                       },
                     ],
                   },

@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   postgres:
@@ -24,7 +24,7 @@ services:
       - oaku_network
 
   backend:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     container_name: oaku_backend
@@ -40,6 +40,22 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_CALLBACK_URL=http://localhost:4001/auth/google/callback
+
+      - KUALL_CLIENT_ID=${KUALL_CLIENT_ID}
+      - KUALL_CLIENT_SECRET=${KUALL_CLIENT_SECRET}
+      - KUALL_REDIRECT_URI=${KUALL_REDIRECT_URI}
+      - KUALL_AUTHORIZATION_ENDPOINT=${KUALL_AUTHORIZATION_ENDPOINT}
+      - KUALL_TOKEN_ENDPOINT=${KUALL_TOKEN_ENDPOINT}
+      - KUALL_USER_INFO_ENDPOINT=${KUALL_USER_INFO_ENDPOINT}
+      - KUALL_END_SESSION_ENDPOINT=${KUALL_END_SESSION_ENDPOINT}
+
+      - S3_BUCKET=${S3_BUCKET}
+      - S3_ACCESS=${S3_ACCESS}
+      - S3_SECRET=${S3_SECRET}
+      - S3_HOST=${S3_HOST}
+
+      - SECRET_KEY_KUCLUB=${SECRET_KEY_KUCLUB}
+      - CLIENT_SECRET_1=${CLIENT_SECRET_1}
     ports:
       - "4001:4001"
     depends_on:
@@ -54,7 +70,6 @@ services:
       start_period: 90s
     networks:
       - oaku_network
-
 
 networks:
   oaku_network:

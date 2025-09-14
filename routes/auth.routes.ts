@@ -10,7 +10,6 @@ import { authenticateJWT } from "../middlewares/auth.middleware";
 
 const router = Router();
 
-
 router.get("/", (req: Request, res: Response) => {
   res.json({
     message: "OAKU Authentication API",
@@ -32,7 +31,6 @@ router.get("/", (req: Request, res: Response) => {
         "GET /auth/test - Test protected route (any authenticated user)",
         "GET /auth/profile - Get user profile (any authenticated user)",
         "POST /auth/logout - Logout user (any authenticated user)",
-
       ],
     },
     howToTest: {
@@ -48,13 +46,11 @@ router.get("/", (req: Request, res: Response) => {
   });
 });
 
-
 // GET /auth/google body: {}
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
-
 
 // GET /auth/google/callback body: {}
 router.get(
@@ -66,7 +62,7 @@ router.get(
 // KU ALL LOGIN
 router.get(
   "/kualllogin",
-  passport.authenticate("kualllogin", { scope: ["profile", "email"] })
+  passport.authenticate("kualllogin", { scope: ["openid","profile", "email"] })
 );
 
 router.get(

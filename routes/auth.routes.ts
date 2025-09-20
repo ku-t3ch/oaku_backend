@@ -6,10 +6,9 @@ import {
   logout,
   getProfile,
 } from "../controllers/auth.controller";
-import { authenticateJWT } from "../middlewares/auth.middleware";
+import { ALLROLE, authenticateJWT } from "../middlewares/auth.middleware";
 
 const router = Router();
-
 
 router.get("/", (req: Request, res: Response) => {
   res.json({
@@ -32,7 +31,6 @@ router.get("/", (req: Request, res: Response) => {
         "GET /auth/test - Test protected route (any authenticated user)",
         "GET /auth/profile - Get user profile (any authenticated user)",
         "POST /auth/logout - Logout user (any authenticated user)",
-
       ],
     },
     howToTest: {
@@ -48,13 +46,11 @@ router.get("/", (req: Request, res: Response) => {
   });
 });
 
-
 // GET /auth/google body: {}
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
-
 
 // GET /auth/google/callback body: {}
 router.get(
@@ -66,7 +62,7 @@ router.get(
 // KU ALL LOGIN
 router.get(
   "/kualllogin",
-  passport.authenticate("kualllogin", { scope: ["profile", "email"] })
+  passport.authenticate("kualllogin", { scope: ["openid", "profile", "email"] })
 );
 
 router.get(
@@ -79,7 +75,7 @@ router.post(
   "/refresh",
   refreshTokenController as (req: Request, res: Response) => void
 );
-router.post("/logout", authenticateJWT, logout);
-router.get("/profile", authenticateJWT, getProfile);
+router.post("/logout", authenticateJWT, ALLROLE, logout);
+router.get("/profile", authenticateJWT, ALLROLE, getProfile);
 
 export default router;

@@ -186,15 +186,24 @@ export const ALLROLE = (
   next: NextFunction
 ) => {
   const user = req.user;
-  const isSuperAdmin = user?.userRoles?.some((ur: any) => ur.role === "SUPER_ADMIN");
-  const isCampusAdmin = user?.userRoles?.some((ur: any) => ur.role === "CAMPUS_ADMIN");
-  const isHead = user?.userOrganizations?.some((uo: any) => uo.position === "HEAD");
-  const isMember = user?.userOrganizations?.some((uo: any) => uo.position === "MEMBER");
+  const isSuperAdmin = user?.userRoles?.some(
+    (ur: any) => ur.role === "SUPER_ADMIN"
+  );
+  const isCampusAdmin = user?.userRoles?.some(
+    (ur: any) => ur.role === "CAMPUS_ADMIN"
+  );
+  const isHead = user?.userOrganizations?.some(
+    (uo: any) => uo.position === "HEAD"
+  );
+  const isMember = user?.userOrganizations?.some(
+    (uo: any) => uo.position === "MEMBER"
+  );
 
   if (isSuperAdmin || isCampusAdmin || isHead || isMember) return next();
 
   return res.status(403).json({
-    error: "Access denied. Only SUPER_ADMIN, CAMPUS_ADMIN, USER-HEAD, or USER-MEMBER allowed.",
+    error:
+      "Access denied. Only SUPER_ADMIN, CAMPUS_ADMIN, USER-HEAD, or USER-MEMBER allowed.",
   });
 };
 

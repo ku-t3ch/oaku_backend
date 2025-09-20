@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import passport from "./configs/passport";
 import { connectDB, checkDBHealth } from "./configs/db";
+
 import userRoutes from "./routes/users.routes";
 import authRoutes from "./routes/auth.routes";
 import campusRoutes from "./routes/campus.routes";
@@ -18,7 +19,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = Number(process.env.PORT) ;
+const PORT = Number(process.env.PORT);
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
 // Middleware
@@ -38,6 +39,41 @@ app.use(
 
 // Passport middleware
 // Routes
+
+app.get("/api", (req, res) => {
+  res.json({
+    message: "OAKU Backend API",
+    version: "1.0.0",
+    environment: process.env.NODE_ENV,
+    endpoints: {
+      health: "/health",
+      auth: "/auth/*",
+      users: "/users",
+      organizations: "/organizations",
+      "api-docs": "/api-docs",
+    },
+  });
+});
+
+app.get("/health", async (req, res) => {
+  try {
+    const dbHealth = await checkDBHealth();
+    res.json({
+      status: "Backend server is running",
+      port: PORT,
+      environment: process.env.NODE_ENV,
+      database: dbHealth,
+      frontend: FRONTEND_URL,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: "Service unavailable",
+      database: { status: "error", message: "Database health check failed" },
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
 app.use(passport.initialize());
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
@@ -48,7 +84,6 @@ app.use("/projects", projectRoutes);
 app.use("/activity-hours", activityHoursRoutes);
 app.use("/api-docs", swaggerUiServe, swaggerUiSetup);
 app.use("/kuclub", kuclubRoutes);
-
 
 // 404 handler
 app.use("*", (req, res) => {
@@ -120,32 +155,5 @@ async function startServer() {
 }
 
 startServer();
-
-// app.get("/health", async (req, res) => {
-//   const dbHealth = await checkDBHealth();
-//   res.json({
-//     status: "Backend server is running",
-//     port: PORT,
-//     environment: process.env.NODE_ENV,
-//     database: dbHealth,
-//     frontend: FRONTEND_URL,
-//     timestamp: new Date().toISOString(),
-//   });
-// });
-
-// Basic API endpoint
-// app.get("/api", (req, res) => {
-//   res.json({
-//     message: "OAKU Backend API",
-//     version: "1.0.0",
-//     environment: process.env.NODE_ENV,
-//     endpoints: {
-//       health: "/health",
-//       auth: "/auth/*",
-//       users: "/api/users (coming soon)",
-//       organizations: "/api/organizations (coming soon)",
-//     },
-//   });
-// });
 
 export default app;

@@ -1,0 +1,60 @@
+# --- Builder Stage ---
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Install system deps for native modules
+RUN apk add --no-cache python3 make g++ openssl
+
+# Upgrade npm to match local version
+RUN npm install -g npm@11
+
+# Copy package files and install deps (including dev)
+COPY package*.json ./
+
+# Copy source code
+COPY . .
+
+RUN npm ci 
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Build TypeScript
+RUN npm run build
+
+# Prune devDependencies to keep only runtime deps
+RUN npm prune --production
+
+
+# --- Production Stage ---
+FROM node:20-alpine
+
+# Install curl for healthcheck
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs \
+    && adduser -S nodejs -u 1001
+
+# Copy runtime files from builder
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/swagger.yaml ./
+
+# Set ownership
+RUN chown -R nodejs:nodejs /app
+USER nodejs
+
+EXPOSE 4001
+
+# # Health check
+# HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+#     CMD curl -f http://localhost:4001/health || exit 1
+
+# Run directly with Node.js
+CMD ["node", "dist/server.js"]

@@ -40,6 +40,20 @@ app.use(
 // Passport middleware
 // Routes
 
+app.get("/api", (req, res) => {
+  res.json({
+    message: "OAKU Backend API",
+    version: "1.0.0",
+    environment: process.env.NODE_ENV,
+    endpoints: {
+      health: "/health",
+      auth: "/auth/*",
+      users: "/users",
+      organizations: "/organizations",
+      "api-docs": "/api-docs",
+    },
+  });
+});
 
 app.get("/health", async (req, res) => {
   try {
@@ -141,32 +155,5 @@ async function startServer() {
 }
 
 startServer();
-
-// app.get("/health", async (req, res) => {
-//   const dbHealth = await checkDBHealth();
-//   res.json({
-//     status: "Backend server is running",
-//     port: PORT,
-//     environment: process.env.NODE_ENV,
-//     database: dbHealth,
-//     frontend: FRONTEND_URL,
-//     timestamp: new Date().toISOString(),
-//   });
-// });
-
-// Basic API endpoint
-// app.get("/api", (req, res) => {
-//   res.json({
-//     message: "OAKU Backend API",
-//     version: "1.0.0",
-//     environment: process.env.NODE_ENV,
-//     endpoints: {
-//       health: "/health",
-//       auth: "/auth/*",
-//       users: "/api/users (coming soon)",
-//       organizations: "/api/organizations (coming soon)",
-//     },
-//   });
-// });
 
 export default app;

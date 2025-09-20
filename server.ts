@@ -37,8 +37,9 @@ app.use(
   })
 );
 
-// Passport middleware
-// Routes
+app.use(passport.initialize());
+
+
 
 app.get("/api", (req, res) => {
   res.json({
@@ -49,7 +50,12 @@ app.get("/api", (req, res) => {
       health: "/health",
       auth: "/auth/*",
       users: "/users",
+      campus: "/campus",
       organizations: "/organizations",
+      "organization-types": "/organization-types",
+      projects: "/projects",
+      "activity-hours": "/activity-hours",
+      kuclub: "/kuclub",
       "api-docs": "/api-docs",
     },
   });
@@ -74,7 +80,6 @@ app.get("/health", async (req, res) => {
     });
   }
 });
-app.use(passport.initialize());
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 app.use("/campus", campusRoutes);
@@ -137,7 +142,6 @@ async function startServer() {
         console.log(`   Google OAuth: http://localhost:${PORT}/auth/google`);
         console.log(`   Profile: http://localhost:${PORT}/auth/profile`);
       });
-
       break;
     } catch (error) {
       retries++;

@@ -6,7 +6,7 @@ import {
   logout,
   getProfile,
 } from "../controllers/auth.controller";
-import { authenticateJWT } from "../middlewares/auth.middleware";
+import { ALLROLE, authenticateJWT } from "../middlewares/auth.middleware";
 
 const router = Router();
 
@@ -62,7 +62,7 @@ router.get(
 // KU ALL LOGIN
 router.get(
   "/kualllogin",
-  passport.authenticate("kualllogin", { scope: ["openid","profile", "email"] })
+  passport.authenticate("kualllogin", { scope: ["openid", "profile", "email"] })
 );
 
 router.get(
@@ -75,7 +75,7 @@ router.post(
   "/refresh",
   refreshTokenController as (req: Request, res: Response) => void
 );
-router.post("/logout", authenticateJWT, logout);
-router.get("/profile", authenticateJWT, getProfile);
+router.post("/logout", authenticateJWT, ALLROLE, logout);
+router.get("/profile", authenticateJWT, ALLROLE, getProfile);
 
 export default router;
